@@ -18,7 +18,7 @@ export function CustomersPage() {
                 description="Manage your customers and customer information."
                 action={
                     <Link
-                        to="/customers/create"
+                        to="/admin/customers/create"
                         className={buttonVariants({ size: "sm" })}
                     >
                         <Plus className="size-4" />

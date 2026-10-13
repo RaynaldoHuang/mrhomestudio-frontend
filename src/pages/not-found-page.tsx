@@ -30,10 +30,10 @@ export function NotFoundPage() {
                         Go Back
                     </Button>
 
-                    <Link to="/dashboard">
+                    <Link to="/">
                         <Button>
                             <Home className="size-4" />
-                            Dashboard
+                            Home
                         </Button>
                     </Link>
                 </div>

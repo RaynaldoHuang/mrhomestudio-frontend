@@ -1,0 +1,229 @@
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
+import { Image, Loader2, Package, Pencil, Plus, Trash2, X } from "lucide-react"
+import { toast } from "sonner"
+
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { EmptyState } from "@/components/shared/empty-state"
+import { ErrorState } from "@/components/shared/error-state"
+import { LoadingState } from "@/components/shared/loading-state"
+import { PageHeader } from "@/components/shared/page-header"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getAdminCategories, type Category } from "@/lib/category-api"
+import {
+  createProduct,
+  deleteProduct,
+  getAdminProducts,
+  updateProduct,
+  type Product,
+  type ProductFormValues,
+} from "@/lib/product-api"
+
+const emptyForm: ProductFormValues = {
+  name: "",
+  category: "",
+  category_id: null,
+  price: 0,
+  stock: 0,
+  description: "",
+  specifications: [],
+  variants: [],
+  is_active: true,
+  show_on_home: false,
+  images: [],
+  remove_image_ids: [],
+}
+
+const formatPrice = (price: number) => `Rp${price.toLocaleString("id-ID")}`
+
+function valuesFromProduct(product: Product): ProductFormValues {
+  return {
+    name: product.name,
+    category: product.category ?? "",
+    category_id: product.category_id,
+    price: product.price,
+    stock: product.stock,
+    description: product.description,
+    specifications: product.specifications,
+    variants: product.variants,
+    is_active: product.is_active,
+    show_on_home: product.show_on_home,
+    images: [],
+    remove_image_ids: [],
+  }
+}
+
+export function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
+  const [form, setForm] = useState<ProductFormValues>(emptyForm)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const loadProducts = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError(false)
+    try {
+      setProducts(await getAdminProducts())
+    } catch {
+      setLoadError(true)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    Promise.all([getAdminProducts(), getAdminCategories()])
+      .then(([items, categoryItems]) => { if (active) { setProducts(items); setCategories(categoryItems) } })
+      .catch(() => { if (active) setLoadError(true) })
+      .finally(() => { if (active) setIsLoading(false) })
+    return () => { active = false }
+  }, [])
+
+  const existingImages = useMemo(
+    () => editingProduct?.images.filter((image) => !form.remove_image_ids.includes(image.id)) ?? [],
+    [editingProduct, form.remove_image_ids],
+  )
+  const totalImages = existingImages.length + form.images.length
+
+  const openCreateDialog = () => {
+    setEditingProduct(null)
+    setForm({ ...emptyForm, specifications: [], variants: [], images: [], remove_image_ids: [] })
+    setDialogOpen(true)
+  }
+
+  const openEditDialog = (product: Product) => {
+    setEditingProduct(product)
+    setForm(valuesFromProduct(product))
+    setDialogOpen(true)
+  }
+
+  const handleImages = (files: FileList | null) => {
+    if (!files) return
+    const available = Math.max(0, 5 - existingImages.length)
+    const nextImages = Array.from(files).slice(0, available)
+    setForm((current) => ({ ...current, images: nextImages }))
+    if (files.length > available) toast.error("Maximum 5 images per product.")
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (totalImages < 1) {
+      toast.error("Add at least one product image.")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, form)
+        toast.success("Product updated successfully.")
+      } else {
+        await createProduct(form)
+        toast.success("Product created successfully.")
+      }
+      setDialogOpen(false)
+      await loadProducts()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to save product.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    try {
+      await deleteProduct(deleteTarget.id)
+      toast.success("Product deleted successfully.")
+      setDeleteTarget(null)
+      await loadProducts()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to delete product.")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  if (isLoading) return <LoadingState rows={5} />
+  if (loadError) return <ErrorState title="Unable to load products" description="Make sure the Laravel backend is running, then try again." onRetry={() => void loadProducts()} />
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Products" description="Manage product information, variants, specifications, and gallery images." action={<Button size="sm" onClick={openCreateDialog}><Plus className="size-4" /> Add Product</Button>} />
+
+      {products.length === 0 ? (
+        <EmptyState icon={Package} title="No products" description="Create your first product for the website catalog." action={<Button onClick={openCreateDialog}>Add Product</Button>} />
+      ) : (
+        <div className="overflow-hidden rounded-xl border bg-card">
+          <Table>
+            <TableHeader><TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell><div className="flex min-w-56 items-center gap-3">{product.thumbnail_url ? <img src={product.thumbnail_url} alt="" className="size-14 rounded-lg object-cover" /> : <div className="flex size-14 items-center justify-center rounded-lg bg-muted"><Image className="size-5 text-muted-foreground" /></div>}<div><p className="font-medium">{product.name}</p><p className="text-xs text-muted-foreground">{product.images.length} image(s)</p></div></div></TableCell>
+                  <TableCell>{product.category || "—"}</TableCell>
+                  <TableCell>{formatPrice(product.price)}</TableCell>
+                  <TableCell>{product.stock}</TableCell>
+                  <TableCell><div className="flex flex-wrap gap-1"><Badge variant={product.is_active ? "default" : "secondary"}>{product.is_active ? "Active" : "Inactive"}</Badge>{product.show_on_home && <Badge variant="outline">Homepage</Badge>}</div></TableCell>
+                  <TableCell><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" aria-label={`Edit ${product.name}`} onClick={() => openEditDialog(product)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" aria-label={`Delete ${product.name}`} onClick={() => setDeleteTarget(product)}><Trash2 className="size-4 text-destructive" /></Button></div></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+          <form onSubmit={handleSubmit} className="contents">
+            <DialogHeader><DialogTitle>{editingProduct ? "Edit Product" : "Add Product"}</DialogTitle><DialogDescription>The first image is used as the product thumbnail. Add up to 5 images.</DialogDescription></DialogHeader>
+            <div className="grid gap-5 py-2 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-name">Product name</Label><Input id="product-name" required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
+              <div className="space-y-2"><Label htmlFor="product-category">Category</Label><Select value={form.category_id === null ? "none" : String(form.category_id)} onValueChange={(value) => setForm({ ...form, category_id: value === "none" || value === null ? null : Number(value), category: categories.find((category) => String(category.id) === value)?.name ?? "" })}><SelectTrigger id="product-category"><SelectValue>{categories.find((category) => category.id === form.category_id)?.name ?? "No category"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="none">No category</SelectItem>{categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.name}{!category.is_active && " (Inactive)"}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground">Manage categories in Admin → Categories.</p></div>
+              <div className="space-y-2"><Label htmlFor="product-price">Price (Rp)</Label><Input id="product-price" type="number" min={0} required value={form.price} onChange={(event) => setForm({ ...form, price: Number(event.target.value) })} /></div>
+              <div className="space-y-2"><Label htmlFor="product-stock">Stock</Label><Input id="product-stock" type="number" min={0} required value={form.stock} onChange={(event) => setForm({ ...form, stock: Number(event.target.value) })} /></div>
+              <div className="flex items-center justify-between rounded-lg border p-3"><div><Label htmlFor="product-active">Active product</Label><p className="text-xs text-muted-foreground">Visible on the website.</p></div><Switch id="product-active" checked={form.is_active} onCheckedChange={(checked) => setForm({ ...form, is_active: checked })} /></div>
+              <div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2"><div><Label htmlFor="product-home">Tampilkan di homepage (Best Sellers)</Label><p className="mt-1 text-xs text-muted-foreground">Produk aktif yang dipilih akan tampil di section Best Sellers menggunakan gambar pertama produk.</p></div><Switch id="product-home" checked={form.show_on_home} onCheckedChange={(checked) => setForm({ ...form, show_on_home: checked })} /></div>
+              <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-description">Description</Label><Textarea id="product-description" required rows={5} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></div>
+
+              <div className="space-y-3 sm:col-span-2">
+                <div className="flex items-center justify-between"><div><Label>Product images ({totalImages}/5)</Label><p className="text-xs text-muted-foreground">JPG, PNG, or WebP, maximum 8 MB each. The first image is the thumbnail.</p></div></div>
+                {existingImages.length > 0 && <div className="flex flex-wrap gap-3">{existingImages.map((image, index) => <div key={image.id} className="relative"><img src={image.url} alt="" className="size-24 rounded-lg border object-cover" />{index === 0 && <Badge className="absolute bottom-1 left-1 text-[10px]">Thumbnail</Badge>}<button type="button" aria-label="Remove image" onClick={() => setForm((current) => ({ ...current, remove_image_ids: [...current.remove_image_ids, image.id] }))} className="absolute -top-2 -right-2 flex size-6 cursor-pointer items-center justify-center rounded-full bg-destructive text-white"><X className="size-3" /></button></div>)}</div>}
+                <Input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={existingImages.length >= 5} onChange={(event) => handleImages(event.target.files)} />
+                {form.images.length > 0 && <p className="text-xs text-muted-foreground">New: {form.images.map((file) => file.name).join(", ")}</p>}
+              </div>
+
+              <div className="space-y-3 sm:col-span-2">
+                <div className="flex items-center justify-between"><div><Label>Variants</Label><p className="text-xs text-muted-foreground">Examples: Color, Size, Finish, or Package.</p></div><Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, variants: [...form.variants, { name: "", values: [] }] })}><Plus className="size-4" /> Add Variant</Button></div>
+                {form.variants.map((variant, index) => <div key={index} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_2fr_auto]"><Input required placeholder="Variant name" value={variant.name} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} /><Input required placeholder="Black, White, Walnut" value={variant.values.join(", ")} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, values: event.target.value.split(",").map((value) => value.trim()).filter(Boolean) } : item) })} /><Button type="button" variant="ghost" size="icon" onClick={() => setForm({ ...form, variants: form.variants.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="size-4" /></Button></div>)}
+              </div>
+
+              <div className="space-y-3 sm:col-span-2">
+                <div className="flex items-center justify-between"><Label>Specifications</Label><Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, specifications: [...form.specifications, { name: "", value: "" }] })}><Plus className="size-4" /> Add Specification</Button></div>
+                {form.specifications.map((specification, index) => <div key={index} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_2fr_auto]"><Input required placeholder="Specification" value={specification.name} onChange={(event) => setForm({ ...form, specifications: form.specifications.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} /><Input required placeholder="Value" value={specification.value} onChange={(event) => setForm({ ...form, specifications: form.specifications.map((item, itemIndex) => itemIndex === index ? { ...item, value: event.target.value } : item) })} /><Button type="button" variant="ghost" size="icon" onClick={() => setForm({ ...form, specifications: form.specifications.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="size-4" /></Button></div>)}
+              </div>
+            </div>
+            <DialogFooter><Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isSaving}>Cancel</Button><Button type="submit" disabled={isSaving}>{isSaving && <Loader2 className="size-4 animate-spin" />}{isSaving ? "Saving..." : "Save Product"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)} title="Delete product?" description={`Delete “${deleteTarget?.name ?? "this product"}” and all of its images? This action cannot be undone.`} confirmLabel={isDeleting ? "Deleting..." : "Delete"} destructive onConfirm={() => void handleDelete()} />
+    </div>
+  )
+}

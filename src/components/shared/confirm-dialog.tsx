@@ -21,6 +21,7 @@ interface ConfirmDialogProps {
     confirmLabel?: string
     cancelLabel?: string
     destructive?: boolean
+    closeOnBackdropClick?: boolean
     onConfirm: () => void
 }
 
@@ -33,6 +34,7 @@ export function ConfirmDialog({
     confirmLabel = "Confirm",
     cancelLabel = "Cancel",
     destructive = false,
+    closeOnBackdropClick = false,
     onConfirm,
 }: ConfirmDialogProps) {
     return (
@@ -46,7 +48,13 @@ export function ConfirmDialog({
                 </AlertDialogTrigger>
             ) : null}
 
-            <AlertDialogContent>
+            <AlertDialogContent
+                onBackdropClick={
+                    closeOnBackdropClick
+                        ? () => onOpenChange?.(false)
+                        : undefined
+                }
+            >
                 <AlertDialogHeader>
                     <AlertDialogTitle>
                         {title}

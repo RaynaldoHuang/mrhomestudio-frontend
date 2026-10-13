@@ -1,5 +1,5 @@
 export const appConfig = {
-  name: "RAY Admin",
+  name: "Mr Home Audio",
   description: "Admin Workspace",
-  logo: "R",
+  logo: "M",
 }

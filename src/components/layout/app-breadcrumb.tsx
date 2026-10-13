@@ -11,10 +11,7 @@ import {
 
 const labels: Record<string, string> = {
     dashboard: "Dashboard",
-    customers: "Customers",
     products: "Products",
-    orders: "Orders",
-    settings: "Settings",
     create: "Create",
     edit: "Edit",
 }

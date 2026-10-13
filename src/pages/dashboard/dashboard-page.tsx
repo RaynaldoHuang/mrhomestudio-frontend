@@ -1,66 +1,23 @@
-import {
-  DollarSign,
-  ShoppingCart,
-  Users,
-  WalletCards,
-} from "lucide-react"
+import { Images, Package } from "lucide-react"
+import { Link } from "react-router-dom"
 
-import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/shared/page-header"
-import { StatCard } from "@/components/shared/stat-card"
+
+const sections = [
+  { title: "Products", description: "Manage product details, variants, specifications, stock, and images.", href: "/admin/products", icon: Package },
+  { title: "Homepage Carousel", description: "Manage promotional slides shown at the top of the website.", href: "/admin/carousels", icon: Images },
+]
 
 export function DashboardPage() {
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        description="Monitor your business performance and activity."
-        action={
-          <Button size="sm">
-            Download Report
-          </Button>
-        }
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Total Revenue"
-          value="Rp 125.4M"
-          change="+12.5%"
-          description="vs last month"
-          trend="up"
-          icon={DollarSign}
-        />
-
-        <StatCard
-          title="Customers"
-          value="1,248"
-          change="+8.2%"
-          description="vs last month"
-          trend="up"
-          icon={Users}
-        />
-
-        <StatCard
-          title="Orders"
-          value="856"
-          change="+5.4%"
-          description="vs last month"
-          trend="up"
-          icon={ShoppingCart}
-        />
-
-        <StatCard
-          title="Transactions"
-          value="2,420"
-          change="-1.2%"
-          description="vs last month"
-          trend="down"
-          icon={WalletCards}
-        />
+      <PageHeader title="Dashboard" description="Manage your MR Home Audio website content." />
+      <div className="grid gap-4 md:grid-cols-2">
+        {sections.map((section) => {
+          const Icon = section.icon
+          return <Link key={section.href} to={section.href} className="group rounded-xl border bg-card p-6 transition-colors hover:border-primary/40"><div className="mb-5 flex size-11 items-center justify-center rounded-lg bg-muted group-hover:bg-primary group-hover:text-primary-foreground"><Icon className="size-5" /></div><h2 className="font-semibold">{section.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{section.description}</p></Link>
+        })}
       </div>
-
-      {/* Revenue Overview + Recent Activity tetap di sini */}
     </div>
   )
 }

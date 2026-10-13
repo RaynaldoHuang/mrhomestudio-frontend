@@ -36,7 +36,7 @@ export function EditCustomerPage() {
         // Nanti:
         // await customerApi.update(id, values)
 
-        navigate("/customers")
+        navigate("/admin/customers")
     }
 
     return (
@@ -51,7 +51,7 @@ export function EditCustomerPage() {
                 defaultValues={customer}
                 onSubmit={handleSubmit}
                 onCancel={() =>
-                    navigate("/customers")
+                    navigate("/admin/customers")
                 }
             />
         </div>

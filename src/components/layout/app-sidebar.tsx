@@ -1,22 +1,14 @@
-import { ChevronUp, LogOut, Settings, User } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
 import { appConfig } from "@/config/app"
 import { navigation } from "@/config/navigation"
+import { useAuth } from "@/contexts/auth-context"
 
 import {
     Avatar,
     AvatarFallback,
 } from "@/components/ui/avatar"
-
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 import {
     Sidebar,
@@ -34,10 +26,11 @@ import {
 
 export function AppSidebar() {
     const location = useLocation()
+    const { user } = useAuth()
 
     const isActive = (href: string) => {
-        if (href === "/dashboard") {
-            return location.pathname === "/dashboard"
+        if (href === "/admin") {
+            return location.pathname === "/admin"
         }
 
         return (
@@ -52,7 +45,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <Link
-                            to="/dashboard"
+                            to="/admin"
                             className="block"
                         >
                             <SidebarMenuButton
@@ -122,62 +115,34 @@ export function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger className="w-full">
-                                <SidebarMenuButton
-                                    size="lg"
-                                    className="w-full"
-                                >
-                                    <Avatar className="size-8 rounded-lg">
-                                        <AvatarFallback className="rounded-lg">
-                                            AD
-                                        </AvatarFallback>
-                                    </Avatar>
-
-                                    <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-semibold">
-                                            Administrator
-                                        </span>
-
-                                        <span className="truncate text-xs text-muted-foreground">
-                                            admin@example.com
-                                        </span>
-                                    </div>
-
-                                    <ChevronUp className="ml-auto size-4" />
-                                </SidebarMenuButton>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent
-                                side="top"
-                                align="end"
-                                className="w-56"
+                        <Link to="/admin/profile" className="block">
+                            <SidebarMenuButton
+                                size="lg"
+                                isActive={isActive("/admin/profile")}
+                                tooltip="Profile"
+                                className="w-full"
                             >
-                                <DropdownMenuLabel>
-                                    My Account
-                                </DropdownMenuLabel>
+                                <Avatar className="size-8 rounded-lg">
+                                    <AvatarFallback className="rounded-lg">
+                                        {user?.name.slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
 
-                                <DropdownMenuSeparator />
+                                <div className="grid flex-1 text-left text-sm leading-tight">
+                                    <span className="truncate font-semibold">
+                                        {user?.name}
+                                    </span>
 
-                                <DropdownMenuItem>
-                                    <User className="size-4" />
-                                    Profile
-                                </DropdownMenuItem>
+                                    <span className="truncate text-xs text-muted-foreground">
+                                        {user?.email}
+                                    </span>
+                                </div>
 
-                                <DropdownMenuItem>
-                                    <Settings className="size-4" />
-                                    Settings
-                                </DropdownMenuItem>
-
-                                <DropdownMenuSeparator />
-
-                                <DropdownMenuItem>
-                                    <LogOut className="size-4" />
-                                    Logout
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                <ChevronRight className="ml-auto size-4" />
+                            </SidebarMenuButton>
+                        </Link>
                     </SidebarMenuItem>
+
                 </SidebarMenu>
             </SidebarFooter>
 

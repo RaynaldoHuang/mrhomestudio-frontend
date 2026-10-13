@@ -3,6 +3,198 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-Thin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-ThinItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 100;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-Light.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-LightItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-Italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-Medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-MediumItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-Semibold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-SemiboldItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-BoldItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-Black.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Degular";
+  src: url("./assets/fonts/degular/DegularDemo-BlackItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-Light.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-LightItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-Roman.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-RomanItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-Mediu.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-MediumItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-BoldItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-Black.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Haas Display";
+  src: url("./assets/fonts/neuehaas/NeueHaasDisplay-BlackItalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -71,8 +263,14 @@
 }
 
 @theme inline {
+  --text-title: 2.25rem;
+  --text-title--line-height: 1.1;
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;
+  --font-degular: "Degular", sans-serif;
+  --font-neue-haas: "Neue Haas Display", sans-serif;
+  --font-bebas: "Degular", sans-serif;
+  --font-gilroy: "Neue Haas Display", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -155,7 +353,13 @@
   body {
     @apply bg-background text-foreground;}
   html {
-    @apply font-sans;}}
+    @apply font-sans;}
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }}
 
 /* Keep the application shell full-width; page-specific sizing belongs to each view. */
 #root {

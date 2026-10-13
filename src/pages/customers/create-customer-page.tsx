@@ -24,7 +24,7 @@ export function CreateCustomerPage() {
                 description: `${values.name} has been added to your customers.`,
             })
 
-            navigate("/customers")
+            navigate("/admin/customers")
         } catch (error) {
             console.error("Failed to create customer:", error)
 
@@ -44,7 +44,7 @@ export function CreateCustomerPage() {
             <CustomerForm
                 mode="create"
                 onSubmit={handleSubmit}
-                onCancel={() => navigate("/customers")}
+                onCancel={() => navigate("/admin/customers")}
             />
         </div>
     )

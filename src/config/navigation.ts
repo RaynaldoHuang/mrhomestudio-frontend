@@ -1,9 +1,9 @@
 import {
   LayoutDashboard,
+  Images,
+  PanelTop,
   Package,
-  Settings,
-  ShoppingCart,
-  Users,
+  Tags,
 } from "lucide-react"
 
 export const navigation = [
@@ -12,8 +12,23 @@ export const navigation = [
     items: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/admin",
         icon: LayoutDashboard,
+      },
+    ],
+  },
+  {
+    title: "Website Content",
+    items: [
+      {
+        title: "Carousel",
+        href: "/admin/carousels",
+        icon: Images,
+      },
+      {
+        title: "Mega Menu",
+        href: "/admin/mega-menus",
+        icon: PanelTop,
       },
     ],
   },
@@ -21,29 +36,14 @@ export const navigation = [
     title: "Management",
     items: [
       {
-        title: "Customers",
-        href: "/customers",
-        icon: Users,
-      },
-      {
         title: "Products",
-        href: "/products",
+        href: "/admin/products",
         icon: Package,
       },
       {
-        title: "Orders",
-        href: "/orders",
-        icon: ShoppingCart,
-      },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      {
-        title: "Settings",
-        href: "/settings",
-        icon: Settings,
+        title: "Categories",
+        href: "/admin/categories",
+        icon: Tags,
       },
     ],
   },
