@@ -7,6 +7,7 @@ import heroImage1 from "@/assets/img/img1.png"
 import heroImage2 from "@/assets/img/img2.png"
 import heroImage3 from "@/assets/img/img3.png"
 import { Container } from "@/components/client/container"
+import { Reveal } from "@/components/client/reveal"
 import { getPublicCarousels } from "@/lib/carousel-api"
 import {
   Carousel,
@@ -112,7 +113,7 @@ export function HeroSection() {
                 <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent sm:from-black/60 sm:via-black/5" />
 
                 <Container className="relative z-10 flex h-full max-w-none items-end px-8 pb-10 sm:px-12 sm:pb-14 lg:px-16">
-                  <div className="max-w-4xl">
+                  <Reveal onLoad delay={0.1} className="max-w-4xl">
                     <p className="font-neue-haas mb-2 text-base font-light text-white/90 sm:mb-3 sm:text-lg">
                       {slide.eyebrow}
                     </p>
@@ -127,7 +128,7 @@ export function HeroSection() {
                       {slide.cta}
                       <ArrowUpRight className="size-4" aria-hidden="true" />
                     </Link>
-                  </div>
+                  </Reveal>
                 </Container>
               </div>
             </CarouselItem>

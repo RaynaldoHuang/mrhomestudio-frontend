@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal } from
 import { Link, useParams, useSearchParams } from "react-router-dom"
 
 import { Container } from "@/components/client/container"
+import { Reveal } from "@/components/client/reveal"
 import {
   Sheet,
   SheetContent,
@@ -378,7 +379,7 @@ function CollectionContent({ id }: { id: string }) {
   return (
     <section className="min-h-screen bg-black py-16 text-white sm:py-20 lg:py-24">
       <Container className="max-w-none px-8 sm:px-12 lg:px-16">
-        <header className="mb-10 flex flex-col gap-8 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
+        <Reveal as="header" onLoad className="mb-10 flex flex-col gap-8 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-degular text-title capitalize sm:text-4xl">{activeCategory?.name ?? id.replaceAll("-", " ")}</h1>
             <p className="mt-2 text-sm text-white/60">{filteredProducts.length} items</p>
@@ -398,7 +399,7 @@ function CollectionContent({ id }: { id: string }) {
               </span>
             )}
           </button>
-        </header>
+        </Reveal>
 
         <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <SheetContent
@@ -529,7 +530,7 @@ function CollectionContent({ id }: { id: string }) {
 
         {!isLoading && !loadError && <div className="grid grid-cols-2 gap-x-1 gap-y-10 md:grid-cols-3 md:gap-x-1.5 lg:grid-cols-4 lg:gap-x-2 lg:gap-y-12">
           {visibleProducts.map((product) => (
-            <article key={product.id} className="group min-w-0">
+            <Reveal as="article" key={product.id} className="group min-w-0">
               <Link to={`/product/${product.id}`} className="block" aria-label={`View ${product.name}`}>
                 <div className="relative aspect-square overflow-hidden bg-neutral-100">
                   {product.thumbnail_url ? <img src={product.thumbnail_url} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div className="h-full w-full bg-neutral-200" />}
@@ -537,7 +538,7 @@ function CollectionContent({ id }: { id: string }) {
                 </div>
                 <div className="pt-2"><div className="flex items-start justify-between gap-3"><div><p className="text-sm leading-snug transition-colors group-hover:text-yellow-400">{product.name}</p>{product.category && <p className="mt-1 text-xs text-white/40">{product.category}</p>}</div><p className="shrink-0 text-sm">Rp{product.price.toLocaleString("id-ID")}</p></div></div>
               </Link>
-            </article>
+            </Reveal>
           ))}
         </div>}
 

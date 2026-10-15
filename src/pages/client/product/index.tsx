@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { Container } from "@/components/client/container"
+import { Reveal } from "@/components/client/reveal"
 import { useCart } from "@/contexts/cart-context"
 import { getProduct, type Product } from "@/lib/product-api"
 
@@ -66,7 +67,7 @@ export function ProductDetailPage() {
   }
 
   return (
-    <div className="bg-black text-white">
+    <div key={product.id} className="bg-black text-white">
       <Container className="max-w-none px-5 py-6 sm:px-8 sm:py-10 lg:px-16 lg:py-14">
         <nav aria-label="Breadcrumb" className="mb-7 flex items-center gap-2 text-xs text-white/45 sm:mb-10">
           <Link to="/" className="hover:text-yellow-400">Home</Link><span>/</span>
@@ -75,7 +76,7 @@ export function ProductDetailPage() {
         </nav>
 
         <section className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
-          <div className="grid min-w-0 gap-3 sm:grid-cols-[5.25rem_minmax(0,1fr)] sm:gap-4">
+          <Reveal onLoad className="grid min-w-0 gap-3 sm:grid-cols-[5.25rem_minmax(0,1fr)] sm:gap-4">
             <div className="order-2 flex gap-2 overflow-x-auto sm:order-1 sm:grid sm:auto-rows-[5.25rem] sm:gap-2 sm:overflow-visible">
               {product.images.map((image, index) => (
                 <button key={image.id} type="button" onClick={() => setActiveImage(index)} aria-label={`Show product image ${index + 1}`} aria-pressed={activeImage === index} className={`aspect-square w-[4.5rem] shrink-0 cursor-pointer overflow-hidden bg-white sm:w-full ${activeImage === index ? "ring-2 ring-yellow-500 ring-inset" : "ring-1 ring-white/20 ring-inset"}`}>
@@ -87,9 +88,9 @@ export function ProductDetailPage() {
               <span className="absolute top-4 left-4 z-10 bg-black px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-white">New arrival</span>
               {product.images[activeImage] && <img src={product.images[activeImage].url} alt={product.name} className="h-full w-full object-cover" />}
             </div>
-          </div>
+          </Reveal>
 
-          <div className="lg:sticky lg:top-28">
+          <Reveal onLoad delay={0.12} className="lg:sticky lg:top-28">
             <p className="mb-3 text-xs uppercase tracking-[0.18em] text-yellow-400">{product.category || "Premium audio"}</p>
             <h1 className="font-degular text-title font-medium tracking-tight sm:text-6xl xl:text-4xl sm:leading-[.88]">{product.name}</h1>
             <p className="mt-7 text-2xl tracking-tight">Rp{product.price.toLocaleString("id-ID")}</p>
@@ -120,11 +121,11 @@ export function ProductDetailPage() {
               <div className="flex gap-3"><ShieldCheck className="size-5 text-yellow-400" /><div><p>Official warranty</p><p className="mt-1 text-xs text-white/45">Protected purchase</p></div></div>
               <div className="flex gap-3"><Headphones className="size-5 text-yellow-400" /><div><p>Expert support</p><p className="mt-1 text-xs text-white/45">Audio specialists</p></div></div>
             </div>
-          </div>
+          </Reveal>
         </section>
       </Container>
 
-      {product.specifications.length > 0 && <section className="border-t border-white/10 bg-neutral-950 py-16 sm:py-20 lg:py-24"><Container className="max-w-none px-5 sm:px-8 lg:px-16"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-20"><div><p className="mb-4 text-xs uppercase tracking-[0.20em] text-yellow-400">Technical information</p><h2 className="font-degular text-title sm:text-5xl sm:leading-[0.95]">Product specifications</h2></div><dl className="border-t border-white/15">{product.specifications.map((specification) => <div key={`${specification.name}-${specification.value}`} className="grid grid-cols-2 gap-6 border-b border-white/15 py-4 text-sm sm:py-5"><dt className="text-white/45">{specification.name}</dt><dd>{specification.value}</dd></div>)}</dl></div></Container></section>}
+      {product.specifications.length > 0 && <Reveal as="section" className="border-t border-white/10 bg-neutral-950 py-16 sm:py-20 lg:py-24"><Container className="max-w-none px-5 sm:px-8 lg:px-16"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-20"><div><p className="mb-4 text-xs uppercase tracking-[0.20em] text-yellow-400">Technical information</p><h2 className="font-degular text-title sm:text-5xl sm:leading-[0.95]">Product specifications</h2></div><dl className="border-t border-white/15">{product.specifications.map((specification) => <div key={`${specification.name}-${specification.value}`} className="grid grid-cols-2 gap-6 border-b border-white/15 py-4 text-sm sm:py-5"><dt className="text-white/45">{specification.name}</dt><dd>{specification.value}</dd></div>)}</dl></div></Container></Reveal>}
     </div>
   )
 }
