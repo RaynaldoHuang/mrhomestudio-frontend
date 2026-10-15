@@ -339,7 +339,7 @@ export function CarouselsPage() {
                   accept="image/jpeg,image/png,image/webp"
                   onChange={(event) => updateField("image", event.target.files?.[0] ?? null)}
                 />
-                <p className="text-xs text-muted-foreground">JPG, PNG, or WebP. Maximum 8 MB.</p>
+                <p className="text-xs text-muted-foreground">JPG, PNG, or WebP. Maximum 8 MB. Automatically optimized to WebP.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="image_position">Image position</Label>

@@ -1,11 +1,19 @@
 import { useLayoutEffect } from "react"
-import { Outlet } from "react-router-dom"
+import { Outlet, useLocation } from "react-router-dom"
 
 import { Footer } from "@/components/client/footer"
 import { Navbar } from "@/components/client/navbar"
 import { BackToTop } from "@/components/client/back-to-top"
 
 export function ClientLayout() {
+  const { pathname } = useLocation()
+
+  useLayoutEffect(() => {
+    const url = new URL(pathname, "https://mrhommeaudio.com").href
+    document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute("href", url)
+    document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute("content", url)
+  }, [pathname])
+
   useLayoutEffect(() => {
     const htmlBackground = document.documentElement.style.backgroundColor
     const bodyBackground = document.body.style.backgroundColor

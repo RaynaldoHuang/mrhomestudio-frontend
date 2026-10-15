@@ -176,7 +176,7 @@ export function MegaMenusPage() {
                 <div className="space-y-2"><Label htmlFor="featured-title">Title</Label><Input id="featured-title" value={form.featured_title} onChange={(event) => setForm({ ...form, featured_title: event.target.value })} /></div>
                 <div className="space-y-2"><Label htmlFor="featured-url">Destination URL</Label><Input id="featured-url" value={form.featured_url} placeholder="/collection/speakers" onChange={(event) => setForm({ ...form, featured_url: event.target.value })} /></div>
                 <div className="space-y-2"><Label htmlFor="featured-alt">Image alt text</Label><Input id="featured-alt" value={form.featured_image_alt} onChange={(event) => setForm({ ...form, featured_image_alt: event.target.value })} /></div>
-                <div className="space-y-2"><Label htmlFor="featured-image">Image</Label><Input id="featured-image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setForm({ ...form, featured_image: event.target.files?.[0] ?? null })} /></div>
+                <div className="space-y-2"><Label htmlFor="featured-image">Image</Label><Input id="featured-image" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setForm({ ...form, featured_image: event.target.files?.[0] ?? null })} /><p className="text-xs text-muted-foreground">JPG, PNG, or WebP. Maximum 8 MB. Automatically optimized to WebP.</p></div>
                 {editingMenu?.featured_image_url && !form.featured_image && <img src={editingMenu.featured_image_url} alt="" className="h-28 w-48 rounded-lg object-cover" />}
               </section>
             </div>
