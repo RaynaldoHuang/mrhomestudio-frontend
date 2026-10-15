@@ -22,6 +22,7 @@ import {
 import { getPublicMegaMenus, type MegaMenu } from "@/lib/mega-menu-api"
 import { getProducts, type Product } from "@/lib/product-api"
 import { getCategories, type Category } from "@/lib/category-api"
+import { collectionIdFromHref, collectionTitle } from "@/lib/collection-links"
 
 const productsPerPage = 16
 type AvailabilityFilter = "in-stock" | "out-of-stock"
@@ -41,11 +42,6 @@ function toSlug(value: string) {
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
-}
-
-function collectionIdFromHref(href: string) {
-  const match = href.match(/\/collection\/([^/?#]+)/)
-  return match?.[1] ?? ""
 }
 
 function productValues(product: Product) {
@@ -381,7 +377,7 @@ function CollectionContent({ id }: { id: string }) {
       <Container className="max-w-none px-8 sm:px-12 lg:px-16">
         <Reveal as="header" onLoad className="mb-10 flex flex-col gap-8 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="font-degular text-title capitalize sm:text-4xl">{activeCategory?.name ?? id.replaceAll("-", " ")}</h1>
+            <h1 className="font-degular text-title sm:text-4xl">{collectionTitle(id, megaMenus, activeCategory?.name)}</h1>
             <p className="mt-2 text-sm text-white/60">{filteredProducts.length} items</p>
           </div>
 

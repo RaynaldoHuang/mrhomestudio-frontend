@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { createMegaMenu, deleteMegaMenu, getAdminMegaMenus, updateMegaMenu, type MegaMenu, type MegaMenuFormValues } from "@/lib/mega-menu-api"
+import { collectionHref } from "@/lib/collection-links"
 
 const emptyGroup = () => ({ title: "", links: [{ label: "", href: "" }] })
 const emptyForm: MegaMenuFormValues = {
@@ -90,7 +91,9 @@ export function MegaMenusPage() {
     ...current,
     groups: current.groups.map((group, index) => index === groupIndex ? {
       ...group,
-      links: group.links.map((link, index) => index === linkIndex ? { ...link, [field]: value } : link),
+      links: group.links.map((link, index) => index === linkIndex
+        ? { ...link, [field]: value, ...(field === "label" ? { href: collectionHref(value) } : {}) }
+        : link),
     } : group),
   }))
 
@@ -152,7 +155,7 @@ export function MegaMenusPage() {
             <DialogHeader><DialogTitle>{editingMenu ? "Edit Mega Menu" : "Add Mega Menu"}</DialogTitle><DialogDescription>Configure a main navigation tab, grouped links, and its optional promotion.</DialogDescription></DialogHeader>
             <div className="space-y-6 py-2">
               <section className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="space-y-2"><Label htmlFor="menu-label">Menu label</Label><Input id="menu-label" required value={form.label} placeholder="Speakers" onChange={(event) => setForm({ ...form, label: event.target.value })} /></div>
+                <div className="space-y-2"><Label htmlFor="menu-label">Menu label</Label><Input id="menu-label" required value={form.label} placeholder="Speakers" onChange={(event) => setForm({ ...form, label: event.target.value, href: collectionHref(event.target.value) })} /></div>
                 <div className="space-y-2 sm:col-span-2"><Label htmlFor="menu-href">View all URL</Label><Input id="menu-href" required value={form.href} placeholder="/collection/speakers" onChange={(event) => setForm({ ...form, href: event.target.value })} /></div>
                 <div className="space-y-2"><Label htmlFor="menu-order">Order</Label><Input id="menu-order" type="number" min={0} required value={form.sort_order} onChange={(event) => setForm({ ...form, sort_order: Number(event.target.value) })} /></div>
                 <div className="flex items-center justify-between rounded-lg border p-3 sm:col-span-2 lg:col-span-4"><div><Label htmlFor="menu-active">Active menu</Label><p className="text-xs text-muted-foreground">Visible in the website navbar.</p></div><Switch id="menu-active" checked={form.is_active} onCheckedChange={(checked) => setForm({ ...form, is_active: checked })} /></div>
