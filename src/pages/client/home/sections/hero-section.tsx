@@ -95,8 +95,8 @@ export function HeroSection() {
       className="h-[calc(100svh-5rem)] min-h-128 w-full overflow-hidden bg-black lg:h-[calc(100svh-4.5rem)]"
     >
       <Carousel
-        opts={{ loop: true }}
-        plugins={autoplayPlugins}
+        opts={{ loop: slides.length > 1 }}
+        plugins={slides.length > 1 ? autoplayPlugins : []}
         className="h-full w-full **:data-[slot=carousel-content]:h-full [&_[data-slot=carousel-content]>div]:h-full"
       >
         <CarouselContent className="ml-0 h-full">
@@ -111,7 +111,7 @@ export function HeroSection() {
                 <div className="absolute inset-0 bg-black/5" />
                 <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent sm:from-black/60 sm:via-black/5" />
 
-                <Container className="relative z-10 flex h-full max-w-none items-end px-8 pb-20 sm:px-12 sm:pb-14 lg:px-16">
+                <Container className="relative z-10 flex h-full max-w-none items-end px-8 pb-10 sm:px-12 sm:pb-14 lg:px-16">
                   <div className="max-w-4xl">
                     <p className="font-neue-haas mb-2 text-base font-light text-white/90 sm:mb-3 sm:text-lg">
                       {slide.eyebrow}
@@ -134,10 +134,12 @@ export function HeroSection() {
           ))}
         </CarouselContent>
 
-        <Container className="pointer-events-none absolute inset-x-0 bottom-20 z-20 h-13 max-w-none px-8 sm:bottom-14 sm:px-12 lg:px-16">
-          <CarouselPrevious className="pointer-events-auto top-0 right-20 bottom-auto left-auto my-0 size-10 border-0 bg-white text-black shadow-lg hover:bg-yellow-500 sm:right-25 sm:size-11 lg:right-29" />
-          <CarouselNext className="pointer-events-auto top-0 right-8 bottom-auto my-0 size-10 border-0 bg-white text-black shadow-lg hover:bg-yellow-500 sm:right-12 sm:size-11 lg:right-16" />
-        </Container>
+        {slides.length > 1 && (
+          <Container className="pointer-events-none absolute inset-x-0 bottom-14 z-20 hidden h-13 max-w-none px-16 lg:block">
+            <CarouselPrevious className="pointer-events-auto top-0 right-29 bottom-auto left-auto my-0 size-11 border-0 bg-white text-black shadow-lg hover:bg-yellow-500" />
+            <CarouselNext className="pointer-events-auto top-0 right-16 bottom-auto my-0 size-11 border-0 bg-white text-black shadow-lg hover:bg-yellow-500" />
+          </Container>
+        )}
       </Carousel>
     </section>
   )
