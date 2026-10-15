@@ -109,7 +109,7 @@ export function HeroSection() {
                   className={`absolute inset-0 h-full w-full object-cover ${slide.imagePosition}`}
                 />
                 <div className="absolute inset-0 bg-black/5" />
-                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/5 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent sm:from-black/60 sm:via-black/5" />
 
                 <Container className="relative z-10 flex h-full max-w-none items-end px-8 pb-20 sm:px-12 sm:pb-14 lg:px-16">
                   <div className="max-w-4xl">

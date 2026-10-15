@@ -9,6 +9,19 @@ export function ClientLayout() {
   const { pathname } = useLocation()
 
   useLayoutEffect(() => {
+    const previousScrollRestoration = window.history.scrollRestoration
+    window.history.scrollRestoration = "manual"
+
+    return () => {
+      window.history.scrollRestoration = previousScrollRestoration
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+  }, [pathname])
+
+  useLayoutEffect(() => {
     const url = new URL(pathname, "https://mrhommeaudio.com").href
     document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute("href", url)
     document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute("content", url)
