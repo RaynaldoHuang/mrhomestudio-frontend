@@ -1,12 +1,17 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import { lazy, Suspense } from "react"
 
-import { AdminLayout } from "@/layouts/admin-layout"
 import { ClientLayout } from "@/layouts/client-layout"
 import { Toaster } from "@/components/ui/sonner"
 import { PageLoading } from "@/components/shared/page-loading"
 import { CartProvider } from "@/contexts/cart-provider"
 import { RequireSuperAdmin } from "@/components/auth/require-super-admin"
+
+const AdminLayout = lazy(() =>
+  import("@/layouts/admin-layout").then(({ AdminLayout }) => ({
+    default: AdminLayout,
+  })),
+)
 
 const DashboardPage = lazy(() =>
   import("@/pages/dashboard/dashboard-page").then(({ DashboardPage }) => ({
