@@ -22,10 +22,10 @@ import {
 import { getPublicMegaMenus, type MegaMenu } from "@/lib/mega-menu-api"
 import { getProducts, type Product } from "@/lib/product-api"
 import { getCategories, type Category } from "@/lib/category-api"
+import { specificationLabel } from "@/lib/specification-label"
 import { collectionIdFromHref, collectionTitle } from "@/lib/collection-links"
 
 const productsPerPage = 16
-type AvailabilityFilter = "in-stock" | "out-of-stock"
 type FilterSource = "menu" | "category" | "specification" | "variant"
 
 type DynamicFilterGroup = {
@@ -138,11 +138,9 @@ function CollectionContent({ id }: { id: string }) {
   const [loadError, setLoadError] = useState(false)
   const [sortBy, setSortBy] = useState("latest")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [availability, setAvailability] = useState<AvailabilityFilter[]>([])
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({})
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     sorting: true,
-    availability: true,
     price: false,
   })
   const [minimumPrice, setMinimumPrice] = useState("")
@@ -235,7 +233,7 @@ function CollectionContent({ id }: { id: string }) {
         const groupBase = { source, sourceName: label } as const
         groups.push({
           key: `${source}:${normalizedName}`,
-          label,
+          label: source === "specification" ? specificationLabel(label) : label,
           ...groupBase,
           options: [...values].sort().map((value) => ({
             label: value,
@@ -268,14 +266,6 @@ function CollectionContent({ id }: { id: string }) {
       result = result.filter((product) => selectedValues.some((value) => productMatchesOption(product, group, value)))
     })
 
-    if (availability.length === 1 && availability.includes("in-stock")) {
-      result = result.filter((product) => product.stock > 0)
-    }
-
-    if (availability.length === 1 && availability.includes("out-of-stock")) {
-      result = result.filter((product) => product.stock < 1)
-    }
-
     const parsedMinimumPrice = Number(minimumPrice)
     const parsedMaximumPrice = Number(maximumPrice)
 
@@ -293,16 +283,14 @@ function CollectionContent({ id }: { id: string }) {
       if (sortBy === "name") return a.name.localeCompare(b.name)
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
-  }, [availability, collectionProducts, dynamicFilterGroups, maximumPrice, minimumPrice, selectedFilters, sortBy])
+  }, [collectionProducts, dynamicFilterGroups, maximumPrice, minimumPrice, selectedFilters, sortBy])
 
   const activeFilterCount = Number(sortBy !== "latest")
-    + Number(availability.length > 0)
     + Number(minimumPrice !== "" || maximumPrice !== "")
     + Object.values(selectedFilters).filter((values) => values.length > 0).length
 
   function resetFilters() {
     setSortBy("latest")
-    setAvailability([])
     setSelectedFilters({})
     setMinimumPrice("")
     setMaximumPrice("")
@@ -312,11 +300,6 @@ function CollectionContent({ id }: { id: string }) {
     setOpenSections((current) => ({ ...current, [key]: !(current[key] ?? true) }))
   }
 
-  function toggleAvailability(value: AvailabilityFilter) {
-    setAvailability((current) => current.includes(value)
-      ? current.filter((item) => item !== value)
-      : [...current, value])
-  }
 
   function toggleDynamicFilter(groupKey: string, value: string) {
     setSelectedFilters((current) => {
@@ -414,19 +397,6 @@ function CollectionContent({ id }: { id: string }) {
               ))}
 
               <FilterSection
-                title="Availability"
-                open={openSections.availability ?? true}
-                onToggle={() => toggleSection("availability")}
-              >
-                {([
-                  ["in-stock", "In stock", collectionProducts.filter((product) => product.stock > 0).length],
-                  ["out-of-stock", "Out of stock", collectionProducts.filter((product) => product.stock < 1).length],
-                ] as const).map(([value, label, count]) => (
-                  <FilterCheckbox key={value} label={label} count={count} checked={availability.includes(value)} onChange={() => toggleAvailability(value)} />
-                ))}
-              </FilterSection>
-
-              <FilterSection
                 title="Price"
                 open={openSections.price ?? false}
                 onToggle={() => toggleSection("price")}
@@ -495,7 +465,6 @@ function CollectionContent({ id }: { id: string }) {
               <Link to={`/product/${product.id}`} className="block" aria-label={`View ${product.name}`}>
                 <div className="relative aspect-square overflow-hidden bg-neutral-100">
                   {product.thumbnail_url ? <img src={product.thumbnail_url} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div className="h-full w-full bg-neutral-200" />}
-                  {product.stock < 1 && <span className="absolute top-3 left-3 bg-black px-2.5 py-1 text-[10px] uppercase tracking-widest text-white">Out of stock</span>}
                 </div>
                 <div className="pt-2"><div className="flex items-start justify-between gap-3"><div><p className="text-sm leading-snug transition-colors group-hover:text-yellow-400">{product.name}</p>{product.category && <p className="mt-1 text-xs text-white/40">{product.category}</p>}</div><p className="shrink-0 text-sm">Rp{product.price.toLocaleString("id-ID")}</p></div></div>
               </Link>

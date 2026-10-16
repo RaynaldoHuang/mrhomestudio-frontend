@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { CartContext, type AddCartItem, type CartItem } from "@/contexts/cart-context"
-import { availableQuantity, parseStoredCart, synchronizeCart } from "@/lib/cart-items"
+import { parseStoredCart, synchronizeCart } from "@/lib/cart-items"
 import { getProduct, ProductApiError, type Product } from "@/lib/product-api"
 
 const storageKey = "mr-home-audio-cart"
@@ -68,9 +68,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const id = `${item.productId}-${item.colour.toLowerCase()}`
       setItems((current) => {
         const existing = current.find((cartItem) => cartItem.id === id)
-        const maximum = availableQuantity(current, item.productId, item.stock ?? 99, id)
-        if (maximum < 1) return current
-        const quantity = Math.min(maximum, (existing?.quantity ?? 0) + item.quantity)
+        const quantity = Math.min(Number.MAX_SAFE_INTEGER, (existing?.quantity ?? 0) + item.quantity)
         if (!existing) return [...current, { ...item, id, quantity }]
         return current.map((cartItem) => cartItem.id === id ? { ...item, id, quantity } : cartItem)
       })
@@ -80,8 +78,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!Number.isSafeInteger(quantity)) return
       setItems((current) => current.map((item) => {
         if (item.id !== id || item.unavailableReason) return item
-        const maximum = availableQuantity(current, item.productId, item.stock ?? 99, id)
-        return { ...item, quantity: Math.min(Math.max(1, maximum), Math.max(1, quantity)) }
+        return { ...item, quantity: Math.max(1, quantity) }
       }))
     }
 

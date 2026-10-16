@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { availableQuantity, parseStoredCart, synchronizeCart } from "../src/lib/cart-items.ts"
+import { parseStoredCart, synchronizeCart } from "../src/lib/cart-items.ts"
 
 const cartItem = (overrides = {}) => ({
   id: "1-color: aluminium", productId: 1, name: "Old product", price: 100,
@@ -12,12 +12,11 @@ const product = (overrides = {}) => ({
   variants: [{ name: "Color", values: ["Aluminium", "Black"] }], ...overrides,
 })
 
-test("cart uses the latest admin name, price, cover and stock for existing saved items", () => {
+test("cart uses the latest admin name, price and cover for existing saved items", () => {
   const [item] = synchronizeCart([cartItem()], new Map([[1, product()]]))
   assert.equal(item.name, "Admin product name")
   assert.equal(item.price * item.quantity, 139650000)
   assert.equal(item.image, "/admin-cover.webp")
-  assert.equal(item.stock, 10)
   assert.equal(item.colour, "Color: Aluminium")
   assert.deepEqual(item.selectedVariants, { Color: "Aluminium" })
   assert.equal(item.unavailableReason, undefined)
@@ -28,25 +27,24 @@ test("a changed image replaces the old snapshot and deleted images do not use a 
   assert.equal(item.image, null)
 })
 
-test("a lower stock clamps the total quantity across different variants of a product", () => {
+test("legacy stock values no longer limit quantities across variants", () => {
   const second = cartItem({ id: "1-black", colour: "Color: Black", quantity: 4 })
   const items = synchronizeCart([cartItem(), second], new Map([[1, product({ stock: 5 })]]))
-  assert.deepEqual(items.map((item) => item.quantity), [3, 2])
-  assert.equal(availableQuantity(items, 1, 5, items[0].id), 3)
+  assert.deepEqual(items.map((item) => item.quantity), [3, 4])
+  assert.ok(items.every((item) => !item.unavailableReason))
 })
 
-test("stock exhausted by another variant marks later rows unavailable", () => {
+test("multiple variants remain orderable despite legacy stock limits", () => {
   const second = cartItem({ id: "1-black", colour: "Color: Black", quantity: 1 })
   const items = synchronizeCart([cartItem(), second], new Map([[1, product({ stock: 2 })]]))
-  assert.equal(items[0].quantity, 2)
-  assert.equal(items[1].unavailableReason, "Out of stock.")
+  assert.equal(items[0].quantity, 3)
+  assert.equal(items[1].unavailableReason, undefined)
 })
 
 test("deleted and inactive products remain identifiable but cannot be ordered", () => {
   for (const latest of [null, product({ is_active: false })]) {
     const [item] = synchronizeCart([cartItem()], new Map([[1, latest]]))
     assert.equal(item.unavailableReason, "This product is no longer available.")
-    assert.equal(item.stock, 0)
     assert.equal(item.name, "Old product")
   }
 })
@@ -87,7 +85,8 @@ test("corrupt browser storage is ignored while valid old carts are retained", ()
   assert.deepEqual(parseStoredCart([null, valid, cartItem({ quantity: -1 }), cartItem({ selectedVariants: null })]), [valid])
 })
 
-test("unavailable variants do not reserve stock when adding another selection", () => {
-  const invalid = cartItem({ unavailableReason: "Variant removed", quantity: 10 })
-  assert.equal(availableQuantity([invalid], 1, 5), 5)
+test("zero legacy stock does not block an active product", () => {
+  const [item] = synchronizeCart([cartItem({ quantity: 10, stock: 0, unavailableReason: "Out of stock." })], new Map([[1, product({ stock: 0 })]]))
+  assert.equal(item.quantity, 10)
+  assert.equal(item.unavailableReason, undefined)
 })

@@ -123,7 +123,7 @@ export function CartPage() {
                           <Minus className="size-3.5" />
                         </button>
                         <span className="w-8 text-center text-sm" aria-live="polite">{item.quantity}</span>
-                        <button type="button" disabled={Boolean(item.unavailableReason) || items.filter((entry) => entry.productId === item.productId && !entry.unavailableReason).reduce((total, entry) => total + entry.quantity, 0) >= (item.stock ?? 99)} aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity + 1)} className="flex h-full w-10 cursor-pointer items-center justify-center hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
+                        <button type="button" disabled={Boolean(item.unavailableReason) || item.quantity >= Number.MAX_SAFE_INTEGER} aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity + 1)} className="flex h-full w-10 cursor-pointer items-center justify-center hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
                           <Plus className="size-3.5" />
                         </button>
                       </div>

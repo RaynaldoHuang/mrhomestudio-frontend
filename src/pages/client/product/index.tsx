@@ -6,10 +6,11 @@ import { toast } from "sonner"
 import { Container } from "@/components/client/container"
 import { Reveal } from "@/components/client/reveal"
 import { useCart } from "@/contexts/cart-context"
+import { specificationLabel } from "@/lib/specification-label"
 import { getProduct, type Product } from "@/lib/product-api"
 
 export function ProductDetailPage() {
-  const { addItem, items } = useCart()
+  const { addItem } = useCart()
   const { id = "" } = useParams()
   const [product, setProduct] = useState<Product | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -43,11 +44,6 @@ export function ProductDetailPage() {
   if (!product || String(product.id) !== id) return <div className="min-h-screen bg-black py-32 text-center text-white/60">Loading product…</div>
 
   const addToCart = () => {
-    const inCart = items.filter((item) => item.productId === product.id && !item.unavailableReason).reduce((total, item) => total + item.quantity, 0)
-    if (inCart + quantity > product.stock) {
-      toast.error("The requested quantity exceeds the available stock.")
-      return
-    }
     addItem({
       productId: product.id,
       name: product.name,
@@ -55,7 +51,6 @@ export function ProductDetailPage() {
       colour: selectedVariantLabel || "Standard",
       image: product.thumbnail_url,
       quantity,
-      stock: product.stock,
       selectedVariants,
     })
     toast.success("Added to your cart", { description: `${quantity} × ${product.name}${selectedVariantLabel ? ` — ${selectedVariantLabel}` : ""}` })
@@ -102,7 +97,6 @@ export function ProductDetailPage() {
             <h1 className="font-degular text-3xl font-normal leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
             <p className="mt-7 text-2xl tracking-tight">Rp{product.price.toLocaleString("id-ID")}</p>
             <p className="mt-5 max-w-xl whitespace-pre-line text-base leading-7 text-white/60">{product.description}</p>
-            <p className={`mt-4 text-sm ${product.stock > 0 ? "text-emerald-400" : "text-red-400"}`}>{product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}</p>
 
             {product.variants.map((variant) => (
               <fieldset key={variant.name} className="mt-8">
@@ -117,9 +111,9 @@ export function ProductDetailPage() {
               <div className="col-span-2 flex h-14 items-center justify-between border border-white/25 sm:col-span-1">
                 <button type="button" aria-label="Decrease quantity" onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="flex h-full w-12 cursor-pointer items-center justify-center text-white/70 hover:text-yellow-400"><Minus className="size-4" /></button>
                 <span className="text-sm font-medium">{quantity}</span>
-                <button type="button" aria-label="Increase quantity" onClick={() => setQuantity((value) => Math.min(Math.max(product.stock, 1), value + 1))} className="flex h-full w-12 cursor-pointer items-center justify-center text-white/70 hover:text-yellow-400"><Plus className="size-4" /></button>
+                <button type="button" aria-label="Increase quantity" onClick={() => setQuantity((value) => Math.min(Number.MAX_SAFE_INTEGER, value + 1))} className="flex h-full w-12 cursor-pointer items-center justify-center text-white/70 hover:text-yellow-400"><Plus className="size-4" /></button>
               </div>
-              <button type="button" disabled={product.stock < 1} onClick={addToCart} className="flex h-16 min-w-0 cursor-pointer items-center justify-center gap-2 bg-yellow-500 px-6 text-sm font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40 sm:h-14"><ShoppingBag className="size-4" />{product.stock > 0 ? "Add to cart" : "Out of stock"}</button>
+              <button type="button" onClick={addToCart} className="flex h-16 min-w-0 cursor-pointer items-center justify-center gap-2 bg-yellow-500 px-6 text-sm font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40 sm:h-14"><ShoppingBag className="size-4" />Add to cart</button>
               <button type="button" onClick={shareProduct} aria-label="Share product" className="flex size-16 cursor-pointer items-center justify-center border border-white/25 hover:border-yellow-500 hover:text-yellow-400 sm:size-14"><Share2 className="size-5" /></button>
             </div>
 
@@ -132,7 +126,7 @@ export function ProductDetailPage() {
         </section>
       </Container>
 
-      {product.specifications.length > 0 && <Reveal as="section" className="border-t border-white/10 bg-neutral-950 py-16 sm:py-20 lg:py-24"><Container className="max-w-none px-5 sm:px-8 lg:px-16"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-20"><div><p className="mb-4 text-xs uppercase tracking-[0.20em] text-yellow-400">Technical information</p><h2 className="font-degular text-title sm:text-5xl sm:leading-[0.95]">Product specifications</h2></div><dl className="border-t border-white/15">{product.specifications.map((specification) => <div key={`${specification.name}-${specification.value}`} className="grid grid-cols-2 gap-6 border-b border-white/15 py-4 text-sm sm:py-5"><dt className="text-white/45">{specification.name}</dt><dd>{specification.value}</dd></div>)}</dl></div></Container></Reveal>}
+      {product.specifications.length > 0 && <Reveal as="section" className="border-t border-white/10 bg-neutral-950 py-16 sm:py-20 lg:py-24"><Container className="max-w-none px-5 sm:px-8 lg:px-16"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-20"><div><p className="mb-4 text-xs uppercase tracking-[0.20em] text-yellow-400">Technical information</p><h2 className="font-degular text-title sm:text-5xl sm:leading-[0.95]">Product specifications</h2></div><dl className="border-t border-white/15">{product.specifications.map((specification) => <div key={`${specification.name}-${specification.value}`} className="grid grid-cols-2 gap-6 border-b border-white/15 py-4 text-sm sm:py-5"><dt className="text-white/45">{specificationLabel(specification.name)}</dt><dd>{specification.value}</dd></div>)}</dl></div></Container></Reveal>}
     </div>
   )
 }

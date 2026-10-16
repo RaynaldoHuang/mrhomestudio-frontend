@@ -4,7 +4,7 @@ import { Link } from "react-router-dom"
 import { PageHeader } from "@/components/shared/page-header"
 
 const sections = [
-  { title: "Products", description: "Manage product details, variants, specifications, stock, and images.", href: "/admin/products", icon: Package },
+  { title: "Products", description: "Manage product details, variants, specifications, and images.", href: "/admin/products", icon: Package },
   { title: "Homepage Carousel", description: "Manage promotional slides shown at the top of the website.", href: "/admin/carousels", icon: Images },
 ]
 

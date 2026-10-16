@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { specificationLabel } from "@/lib/specification-label"
 import { parseVariantValues } from "@/lib/variant-values"
 import { formatRupiahInput } from "@/lib/rupiah-input"
 import { getAdminCategories, type Category } from "@/lib/category-api"
@@ -37,7 +38,6 @@ const emptyForm: ProductFormDraft = {
   category: "",
   category_id: null,
   price: 0,
-  stock: 0,
   description: "",
   specifications: [],
   variants: [],
@@ -55,9 +55,8 @@ function valuesFromProduct(product: Product): ProductFormDraft {
     category: product.category ?? "",
     category_id: product.category_id,
     price: product.price,
-    stock: product.stock,
     description: product.description,
-    specifications: product.specifications,
+    specifications: product.specifications.map((specification) => ({ ...specification, name: specificationLabel(specification.name) })),
     variants: product.variants.map((variant) => ({ name: variant.name, valuesText: variant.values.join(", ") })),
     is_active: product.is_active,
     show_on_home: product.show_on_home,
@@ -148,6 +147,7 @@ export function ProductsPage() {
 
     const values: ProductFormValues = {
       ...form,
+      specifications: form.specifications.map((specification) => ({ ...specification, name: specificationLabel(specification.name) })),
       variants: form.variants.map((variant) => ({ name: variant.name, values: parseVariantValues(variant.valuesText) })),
     }
     if (values.variants.some((variant) => variant.values.length === 0)) {
@@ -200,14 +200,13 @@ export function ProductsPage() {
       ) : (
         <div className="overflow-hidden rounded-xl border bg-card">
           <Table>
-            <TableHeader><TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Price</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell><div className="flex min-w-56 items-center gap-3">{product.thumbnail_url ? <img src={product.thumbnail_url} alt="" className="size-14 rounded-lg object-cover" /> : <div className="flex size-14 items-center justify-center rounded-lg bg-muted"><Image className="size-5 text-muted-foreground" /></div>}<div><p className="font-medium">{product.name}</p><p className="text-xs text-muted-foreground">{product.images.length} image(s)</p></div></div></TableCell>
                   <TableCell>{product.category || "—"}</TableCell>
                   <TableCell>{formatPrice(product.price)}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
                   <TableCell><div className="flex flex-wrap gap-1"><Badge variant={product.is_active ? "default" : "secondary"}>{product.is_active ? "Active" : "Inactive"}</Badge>{product.show_on_home && <Badge variant="outline">Homepage</Badge>}</div></TableCell>
                   <TableCell><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" aria-label={`Edit ${product.name}`} onClick={() => openEditDialog(product)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" aria-label={`Delete ${product.name}`} onClick={() => setDeleteTarget(product)}><Trash2 className="size-4 text-destructive" /></Button></div></TableCell>
                 </TableRow>
@@ -225,7 +224,6 @@ export function ProductsPage() {
               <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-name">Product name</Label><Input id="product-name" required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
               <div className="space-y-2"><Label htmlFor="product-category">Category</Label><Select value={form.category_id === null ? "none" : String(form.category_id)} onValueChange={(value) => setForm({ ...form, category_id: value === "none" || value === null ? null : Number(value), category: categories.find((category) => String(category.id) === value)?.name ?? "" })}><SelectTrigger id="product-category"><SelectValue>{categories.find((category) => category.id === form.category_id)?.name ?? (form.category_id === null ? "No category" : "Category removed from Mega Menu")}</SelectValue></SelectTrigger><SelectContent><SelectItem value="none">No category</SelectItem>{categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.menu_groups.length > 0 ? `${category.menu_groups.join(", ")} → ${category.name}` : category.name}{!category.is_active && " (Inactive)"}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground">Categories follow Mega Menu collection links. Manage covers and visibility in Admin → Categories.</p></div>
               <div className="space-y-2"><Label htmlFor="product-price">Price (Rp)</Label><Input id="product-price" type="text" inputMode="numeric" pattern="[0-9.]*" required value={priceInput} onChange={handlePriceChange} /></div>
-              <div className="space-y-2"><Label htmlFor="product-stock">Stock</Label><Input id="product-stock" type="number" min={0} required value={form.stock} onChange={(event) => setForm({ ...form, stock: Number(event.target.value) })} /></div>
               <div className="flex items-center justify-between rounded-lg border p-3"><div className="space-y-2"><Label htmlFor="product-active">Active product</Label><p className="text-xs text-muted-foreground">Visible on the website.</p></div><Switch id="product-active" checked={form.is_active} onCheckedChange={(checked) => setForm({ ...form, is_active: checked })} /></div>
               <div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2"><div><Label htmlFor="product-home">Tampilkan di homepage (Best Sellers)</Label><p className="mt-1 text-xs text-muted-foreground">Produk aktif yang dipilih akan tampil di section Best Sellers menggunakan gambar pertama produk.</p></div><Switch id="product-home" checked={form.show_on_home} onCheckedChange={(checked) => setForm({ ...form, show_on_home: checked })} /></div>
               <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-description">Description</Label><Textarea id="product-description" required rows={5} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></div>

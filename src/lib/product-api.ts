@@ -22,7 +22,6 @@ export type Product = {
   category_id: number | null
   category_slug: string | null
   price: number
-  stock: number
   description: string
   specifications: ProductSpecification[]
   variants: ProductVariant[]
@@ -39,7 +38,6 @@ export type ProductFormValues = {
   category: string
   category_id: number | null
   price: number
-  stock: number
   description: string
   specifications: ProductSpecification[]
   variants: ProductVariant[]
@@ -89,7 +87,6 @@ function toFormData(values: ProductFormValues): FormData {
   formData.append("category", values.category)
   formData.append("category_id", values.category_id === null ? "" : String(values.category_id))
   formData.append("price", String(values.price))
-  formData.append("stock", String(values.stock))
   formData.append("description", values.description)
   formData.append("is_active", values.is_active ? "1" : "0")
   formData.append("show_on_home", values.show_on_home ? "1" : "0")
