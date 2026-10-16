@@ -1,39 +1,42 @@
 import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 
 import { Container } from "@/components/client/container"
 import { getCategories } from "@/lib/category-api"
 import { getPublicMegaMenus } from "@/lib/mega-menu-api"
 
-type FooterLink = { label: string; href: string }
+import { footerCatalogLinks, type FooterLink } from "@/lib/footer-links"
 
 const websiteLinks: FooterLink[] = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
-  { label: "Services", href: "/services" },
-  { label: "Contact Us", href: "/contact" },
   { label: "Shopping Cart", href: "/cart" },
 ]
 
 export function Footer() {
-  const [menuLinks, setMenuLinks] = useState<FooterLink[]>([])
-  const [categoryLinks, setCategoryLinks] = useState<FooterLink[]>([])
+  const { pathname } = useLocation()
+  const [{ productLinks, categoryLinks }, setCatalogLinks] = useState(() => footerCatalogLinks([], []))
 
   useEffect(() => {
     let active = true
-    Promise.allSettled([getPublicMegaMenus(), getCategories()]).then(([menus, categories]) => {
-      if (!active) return
-      if (menus.status === "fulfilled") {
-        setMenuLinks(menus.value.map((menu) => ({ label: menu.label, href: menu.href })))
-      }
-      if (categories.status === "fulfilled") {
-        setCategoryLinks(categories.value.map((category) => ({ label: category.name, href: `/collection/${category.slug}` })))
-      }
-    })
-    return () => { active = false }
-  }, [])
+    let sequence = 0
+    const refreshLinks = async () => {
+      const request = ++sequence
+      const [menus, categories] = await Promise.allSettled([getPublicMegaMenus(), getCategories()])
+      if (!active || request !== sequence) return
+      setCatalogLinks(footerCatalogLinks(
+        menus.status === "fulfilled" ? menus.value : [],
+        categories.status === "fulfilled" ? categories.value : [],
+      ))
+    }
+    void refreshLinks()
+    window.addEventListener("focus", refreshLinks)
+    return () => {
+      active = false
+      window.removeEventListener("focus", refreshLinks)
+    }
+  }, [pathname])
 
-  const productLinks: FooterLink[] = [{ label: "All Products", href: "/collection/all-products" }, ...menuLinks]
   const footerGroups = [
     { title: "Website", links: websiteLinks },
     { title: "Products", links: productLinks },
