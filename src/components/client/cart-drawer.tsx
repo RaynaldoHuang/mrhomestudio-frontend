@@ -84,19 +84,19 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   </Link>
 
                   <div className="flex min-w-0 flex-col">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <Link to={`/product/${item.productId}`} onClick={() => onOpenChange(false)} className="font-medium leading-5 hover:text-yellow-400">
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="w-full min-w-0 sm:w-auto">
+                        <Link to={`/product/${item.productId}`} onClick={() => onOpenChange(false)} title={item.name} className="block font-medium leading-5 wrap-anywhere hover:text-yellow-400 max-sm:truncate">
                           {item.name}
                         </Link>
-                        <p className="mt-1 text-xs text-white/45">{item.colour}</p>
-                        {item.unavailableReason && <p className="mt-2 text-xs text-red-400">{item.unavailableReason}</p>}
+                        <p className="mt-1 text-xs wrap-anywhere text-white/45">{item.colour}</p>
+                        {item.unavailableReason && <p className="mt-2 text-xs wrap-anywhere text-red-400">{item.unavailableReason}</p>}
                       </div>
-                      <p className="shrink-0 text-sm">{formatPrice(item.price * item.quantity)}</p>
+                      <p className="max-w-full text-sm wrap-anywhere sm:shrink-0">{formatPrice(item.price * item.quantity)}</p>
                     </div>
 
-                    <div className="mt-auto flex items-end justify-between gap-4 pt-5">
-                      <div className="flex h-9 items-center border border-white/20">
+                    <div className="mt-auto flex min-w-0 flex-wrap items-end justify-between gap-3 pt-5">
+                      <div className="flex h-9 shrink-0 items-center border border-white/20">
                         <button type="button" disabled={item.quantity <= 1 || Boolean(item.unavailableReason)} aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity - 1)} className="flex h-full w-9 cursor-pointer items-center justify-center hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
                           <Minus className="size-3" />
                         </button>
