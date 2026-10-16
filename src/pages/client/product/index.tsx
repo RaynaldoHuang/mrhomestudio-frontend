@@ -94,7 +94,7 @@ export function ProductDetailPage() {
           <Reveal onLoad delay={0.12} className="lg:sticky lg:top-28">
             <p className="mb-3 text-xs uppercase tracking-[0.18em] text-yellow-400">{product.category || "Premium audio"}</p>
             <h1 className="font-degular text-3xl font-normal leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
-            <p className="mt-7 text-2xl tracking-tight">Rp{product.price.toLocaleString("id-ID")}</p>
+            <p className="mt-3 text-2xl tracking-tight">Rp{product.price.toLocaleString("id-ID")}</p>
             <p className="mt-5 max-w-xl whitespace-pre-line text-base leading-7 text-white/60">{product.description}</p>
 
             {product.variants.map((variant) => (
