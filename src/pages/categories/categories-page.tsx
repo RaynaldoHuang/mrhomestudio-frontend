@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
-import { Image, Loader2, Pencil, Plus, Tags, Trash2 } from "lucide-react"
+import { Image, Loader2, Pencil, Tags, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { createCategory, deleteCategory, getAdminCategories, updateCategory, type Category, type CategoryFormValues } from "@/lib/category-api"
+import { deleteCategory, getAdminCategories, updateCategory, type Category, type CategoryFormValues } from "@/lib/category-api"
 
 const emptyForm: CategoryFormValues = {
   name: "", description: "", image: null, sort_order: 0, show_on_home: false, is_active: true,
@@ -23,6 +24,7 @@ const emptyForm: CategoryFormValues = {
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
+  const [selectedGroup, setSelectedGroup] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -57,12 +59,6 @@ export function CategoriesPage() {
     return () => { reader.onload = null; reader.abort() }
   }, [form.image])
 
-  const openCreate = () => {
-    setEditing(null)
-    setForm({ ...emptyForm, sort_order: Math.max(0, ...categories.map((category) => category.sort_order)) + 1 })
-    setDialogOpen(true)
-  }
-
   const openEdit = (category: Category) => {
     setEditing(category)
     setForm({ name: category.name, description: category.description, image: null, sort_order: category.sort_order, show_on_home: category.show_on_home, is_active: category.is_active })
@@ -71,10 +67,10 @@ export function CategoriesPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!editing) return
     setIsSaving(true)
     try {
-      if (editing) await updateCategory(editing.id, form)
-      else await createCategory(form)
+      await updateCategory(editing.id, form)
       toast.success("Category saved successfully.")
       setDialogOpen(false)
       await loadCategories()
@@ -97,16 +93,39 @@ export function CategoriesPage() {
   if (isLoading) return <LoadingState rows={5} />
   if (loadError) return <ErrorState title="Unable to load categories" description="Please try again." onRetry={() => void loadCategories()} />
 
+  const groups = [...new Set(categories.flatMap((category) => category.menu_groups))].sort((a, b) => a.localeCompare(b))
+  const groupFilter = selectedGroup === "unlinked" || groups.some((group) => `group:${group}` === selectedGroup) ? selectedGroup : "all"
+  const filteredCategories = categories.filter((category) => (
+    groupFilter === "all"
+    || (groupFilter === "unlinked" ? category.menu_groups.length === 0 : category.menu_groups.includes(groupFilter.slice(6)))
+  ))
+  const groupLabel = groupFilter === "all" ? "All groups" : groupFilter === "unlinked" ? "Not linked to a menu" : groupFilter.slice(6)
   const cover = preview?.file === form.image ? preview?.url : editing?.image_url
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Categories" description="Collection links in Mega Menu create categories automatically. Manage their covers, products, and homepage visibility here." action={<Button size="sm" onClick={openCreate}><Plus className="size-4" /> Add Category</Button>} />
-      {categories.length === 0 ? <EmptyState icon={Tags} title="No categories" description="Add collection links in Mega Menu to create categories automatically, or create a category here." action={<Button onClick={openCreate}>Add Category</Button>} /> : (
+      <PageHeader title="Categories" description="Collection links in Mega Menu create categories automatically. Manage their covers, products, and homepage visibility here." />
+      {categories.length > 0 && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="w-full space-y-2 sm:max-w-sm">
+            <Label htmlFor="category-group-filter">Menu / Group</Label>
+            <Select value={groupFilter} onValueChange={(value) => setSelectedGroup(value ?? "all")}>
+              <SelectTrigger id="category-group-filter"><SelectValue>{groupLabel}</SelectValue></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All groups</SelectItem>
+                {groups.map((group) => <SelectItem key={group} value={`group:${group}`}>{group}</SelectItem>)}
+                {categories.some((category) => category.menu_groups.length === 0) && <SelectItem value="unlinked">Not linked to a menu</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-sm text-muted-foreground" aria-live="polite">Showing {filteredCategories.length} of {categories.length} categories</p>
+        </div>
+      )}
+      {categories.length === 0 ? <EmptyState icon={Tags} title="No categories" description="Add collection links in Mega Menu to create categories automatically." /> : filteredCategories.length === 0 ? <EmptyState icon={Tags} title="No categories in this group" description="Choose another group to view its categories." /> : (
         <div className="overflow-hidden rounded-xl border bg-card">
           <Table>
             <TableHeader><TableRow><TableHead>Category</TableHead><TableHead>Menu / Group</TableHead><TableHead>Products</TableHead><TableHead>Order</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-            <TableBody>{categories.map((category) => (
+            <TableBody>{filteredCategories.map((category) => (
               <TableRow key={category.id}>
                 <TableCell><div className="flex items-center gap-3">{category.image_url ? <img src={category.image_url} alt="" className="size-14 rounded-lg object-cover" /> : <div className="flex size-14 items-center justify-center rounded-lg bg-muted"><Image className="size-5" /></div>}<div><p className="font-medium">{category.name}</p><p className="text-xs text-muted-foreground">/collection/{category.slug}</p></div></div></TableCell>
                 <TableCell><div className="space-y-1">{category.menu_groups.length ? category.menu_groups.map((group) => <p key={group} className="text-sm">{group}</p>) : <span className="text-sm text-muted-foreground">Not linked to a menu</span>}</div></TableCell>
@@ -122,7 +141,7 @@ export function CategoriesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <form onSubmit={handleSubmit} className="contents">
-            <DialogHeader><DialogTitle>{editing ? "Edit Category" : "Add Category"}</DialogTitle><DialogDescription>Covers are optional until you display a category on the homepage. Renaming a category keeps its URL and product assignments.</DialogDescription></DialogHeader>
+            <DialogHeader><DialogTitle>Edit Category</DialogTitle><DialogDescription>Covers are optional until you display a category on the homepage. Renaming a category keeps its URL and product assignments.</DialogDescription></DialogHeader>
             <div className="grid gap-5 py-2">
               <div className="space-y-2"><Label htmlFor="category-name">Category name</Label><Input id="category-name" required maxLength={100} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
               <div className="space-y-2"><Label htmlFor="category-description">Short description</Label><Textarea id="category-description" rows={3} maxLength={2000} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></div>
