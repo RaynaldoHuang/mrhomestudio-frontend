@@ -113,14 +113,14 @@ export function ProductDetailPage() {
               </fieldset>
             ))}
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <div className="flex h-14 items-center justify-between border border-white/25 sm:w-36">
+            <div className="mt-8 grid grid-cols-[minmax(0,1fr)_4rem] gap-3 sm:grid-cols-[9rem_minmax(0,1fr)_3.5rem]">
+              <div className="col-span-2 flex h-14 items-center justify-between border border-white/25 sm:col-span-1">
                 <button type="button" aria-label="Decrease quantity" onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="flex h-full w-12 cursor-pointer items-center justify-center text-white/70 hover:text-yellow-400"><Minus className="size-4" /></button>
                 <span className="text-sm font-medium">{quantity}</span>
                 <button type="button" aria-label="Increase quantity" onClick={() => setQuantity((value) => Math.min(Math.max(product.stock, 1), value + 1))} className="flex h-full w-12 cursor-pointer items-center justify-center text-white/70 hover:text-yellow-400"><Plus className="size-4" /></button>
               </div>
-              <button type="button" disabled={product.stock < 1} onClick={addToCart} className="flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 bg-yellow-500 px-6 text-sm font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40"><ShoppingBag className="size-4" />{product.stock > 0 ? "Add to cart" : "Out of stock"}</button>
-              <button type="button" onClick={shareProduct} aria-label="Share product" className="flex size-14 shrink-0 cursor-pointer items-center justify-center border border-white/25 hover:border-yellow-500 hover:text-yellow-400"><Share2 className="size-5" /></button>
+              <button type="button" disabled={product.stock < 1} onClick={addToCart} className="flex h-16 min-w-0 cursor-pointer items-center justify-center gap-2 bg-yellow-500 px-6 text-sm font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40 sm:h-14"><ShoppingBag className="size-4" />{product.stock > 0 ? "Add to cart" : "Out of stock"}</button>
+              <button type="button" onClick={shareProduct} aria-label="Share product" className="flex size-16 cursor-pointer items-center justify-center border border-white/25 hover:border-yellow-500 hover:text-yellow-400 sm:size-14"><Share2 className="size-5" /></button>
             </div>
 
             <div className="mt-7 grid gap-y-6 border-t border-white/15 py-7 text-sm sm:flex sm:justify-between">
