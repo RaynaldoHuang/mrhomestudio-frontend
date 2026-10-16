@@ -1,18 +1,14 @@
 import { createContext, useContext } from "react"
 
-export type CartItem = {
-  id: string
-  productId: number
-  name: string
-  price: number
-  colour: string
-  image: string | null
-  quantity: number
-}
+import type { CartItem } from "@/lib/cart-items"
+export type { CartItem } from "@/lib/cart-items"
 
 export type AddCartItem = Omit<CartItem, "id">
 
 export type CartContextValue = {
+  isSyncing: boolean
+  syncError: boolean
+  refreshProducts: () => Promise<void>
   items: CartItem[]
   itemCount: number
   subtotal: number

@@ -53,6 +53,16 @@ type ApiResponse<T> = { data: T }
 
 const apiUrl = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "")
 
+export class ProductApiError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+    this.name = "ProductApiError"
+  }
+}
+
 async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${apiUrl}${path}`, {
     ...options,
@@ -65,7 +75,7 @@ async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
       ? Object.values(payload.errors).flat().join(" ")
       : null
 
-    throw new Error(validationMessage || payload?.message || "Request failed. Please try again.")
+    throw new ProductApiError(validationMessage || payload?.message || "Request failed. Please try again.", response.status)
   }
 
   if (response.status === 204) return undefined as T

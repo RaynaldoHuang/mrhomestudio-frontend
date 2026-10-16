@@ -9,7 +9,7 @@ import { useCart } from "@/contexts/cart-context"
 import { getProduct, type Product } from "@/lib/product-api"
 
 export function ProductDetailPage() {
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const { id = "" } = useParams()
   const [product, setProduct] = useState<Product | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -43,6 +43,11 @@ export function ProductDetailPage() {
   if (!product || String(product.id) !== id) return <div className="min-h-screen bg-black py-32 text-center text-white/60">Loading product…</div>
 
   const addToCart = () => {
+    const inCart = items.filter((item) => item.productId === product.id && !item.unavailableReason).reduce((total, item) => total + item.quantity, 0)
+    if (inCart + quantity > product.stock) {
+      toast.error("The requested quantity exceeds the available stock.")
+      return
+    }
     addItem({
       productId: product.id,
       name: product.name,
@@ -50,6 +55,8 @@ export function ProductDetailPage() {
       colour: selectedVariantLabel || "Standard",
       image: product.thumbnail_url,
       quantity,
+      stock: product.stock,
+      selectedVariants,
     })
     toast.success("Added to your cart", { description: `${quantity} × ${product.name}${selectedVariantLabel ? ` — ${selectedVariantLabel}` : ""}` })
   }

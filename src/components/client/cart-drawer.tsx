@@ -1,8 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import productImage from "@/assets/img/product1.png"
 import { useCart } from "@/contexts/cart-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
@@ -16,8 +15,12 @@ function formatPrice(value: number) {
 }
 
 export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
-  const { items, itemCount, subtotal, updateQuantity, removeItem } = useCart()
+  const { items, itemCount, subtotal, updateQuantity, removeItem, refreshProducts, isSyncing, syncError } = useCart()
   const [removingIds, setRemovingIds] = useState<Set<string>>(() => new Set())
+
+  useEffect(() => {
+    if (open) void refreshProducts()
+  }, [open, refreshProducts])
 
   const removeItemSmoothly = (id: string) => {
     if (removingIds.has(id)) return
@@ -64,6 +67,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
           </div>
         ) : (
           <>
+            {items.length > 0 && (isSyncing || syncError) && <p role="status" className="px-5 pt-4 text-xs text-white/60 sm:px-8">{isSyncing ? "Updating cart from the latest product data…" : <>Unable to update product data. <button type="button" onClick={() => void refreshProducts()} className="underline">Retry</button></>}</p>}
             <div className="min-h-0 flex-1 overflow-y-auto px-5 sm:px-8">
               {items.map((item) => (
                 <article key={item.id} className={`grid grid-cols-[6rem_minmax(0,1fr)] gap-4 overflow-hidden transition-all duration-300 ease-out sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-6 ${
@@ -76,7 +80,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                     onClick={() => onOpenChange(false)}
                     className="aspect-square overflow-hidden bg-white"
                   >
-                    <img src={productImage} alt={item.name} className="h-full w-full object-cover" />
+                    {item.image && <img src={item.image} alt={item.name} className="h-full w-full object-contain" />}
                   </Link>
 
                   <div className="flex min-w-0 flex-col">
@@ -86,17 +90,18 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                           {item.name}
                         </Link>
                         <p className="mt-1 text-xs text-white/45">{item.colour}</p>
+                        {item.unavailableReason && <p className="mt-2 text-xs text-red-400">{item.unavailableReason}</p>}
                       </div>
                       <p className="shrink-0 text-sm">{formatPrice(item.price * item.quantity)}</p>
                     </div>
 
                     <div className="mt-auto flex items-end justify-between gap-4 pt-5">
                       <div className="flex h-9 items-center border border-white/20">
-                        <button type="button" aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity - 1)} className="flex h-full w-9 cursor-pointer items-center justify-center hover:bg-white/10">
+                        <button type="button" disabled={item.quantity <= 1 || Boolean(item.unavailableReason)} aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity - 1)} className="flex h-full w-9 cursor-pointer items-center justify-center hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
                           <Minus className="size-3" />
                         </button>
                         <span className="w-7 text-center text-xs">{item.quantity}</span>
-                        <button type="button" aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity + 1)} className="flex h-full w-9 cursor-pointer items-center justify-center hover:bg-white/10">
+                        <button type="button" disabled={Boolean(item.unavailableReason) || items.filter((entry) => entry.productId === item.productId && !entry.unavailableReason).reduce((total, entry) => total + entry.quantity, 0) >= (item.stock ?? 99)} aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity + 1)} className="flex h-full w-9 cursor-pointer items-center justify-center hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
                           <Plus className="size-3" />
                         </button>
                       </div>

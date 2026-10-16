@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -10,8 +10,14 @@ function formatPrice(value: number) {
 }
 
 export function CartPage() {
-  const { items, itemCount, subtotal, updateQuantity, removeItem } = useCart()
+  const { items, itemCount, subtotal, updateQuantity, removeItem, refreshProducts, isSyncing, syncError } = useCart()
   const [removingIds, setRemovingIds] = useState<Set<string>>(() => new Set())
+
+  const checkoutDisabled = isSyncing || syncError || items.some((item) => item.unavailableReason)
+
+  useEffect(() => {
+    void refreshProducts()
+  }, [refreshProducts])
 
   const removeItemSmoothly = (id: string) => {
     if (removingIds.has(id)) return
@@ -28,6 +34,7 @@ export function CartPage() {
   }
 
   const checkoutViaWhatsApp = () => {
+    if (checkoutDisabled) return
     const orderLines = items.map((item, index) =>
       [
         `*${String(index + 1).padStart(2, "0")} · ${item.name}*`,
@@ -74,6 +81,7 @@ export function CartPage() {
           {itemCount > 0 && <p className="pb-1 text-sm text-white/50">{itemCount} {itemCount === 1 ? "item" : "items"}</p>}
         </div>
 
+        {items.length > 0 && (isSyncing || syncError) && <p role="status" className="mb-5 text-sm text-white/60">{isSyncing ? "Updating cart from the latest product data…" : <>Unable to update product data. <button type="button" onClick={() => void refreshProducts()} className="underline">Retry</button></>}</p>}
         {items.length === 0 ? (
           <div className="flex min-h-96 flex-col items-center justify-center border border-white/10 bg-neutral-950 px-6 text-center">
             <div className="flex flex-col items-center gap-4">
@@ -95,13 +103,14 @@ export function CartPage() {
                     : "max-h-[30rem] py-7 opacity-100 sm:py-8"
                 }`}>
                   <Link to={`/product/${item.productId}`} className="aspect-square overflow-hidden bg-white">
-                    {item.image && <img src={item.image} alt={item.name} className="h-full w-full object-cover" />}
+                    {item.image && <img src={item.image} alt={item.name} className="h-full w-full object-contain" />}
                   </Link>
 
                   <div className="flex min-w-0 flex-col justify-between gap-6 sm:flex-row sm:items-center">
                     <div className="min-w-0 self-start">
                       <Link to={`/product/${item.productId}`} className="text-lg font-medium transition-colors hover:text-yellow-400">{item.name}</Link>
                       <p className="mt-1 text-sm text-white/45">Variant: {item.colour}</p>
+                      {item.unavailableReason && <p className="mt-2 text-xs text-red-400">{item.unavailableReason}</p>}
                       <button type="button" disabled={removingIds.has(item.id)} onClick={() => removeItemSmoothly(item.id)} className="mt-5 inline-flex cursor-pointer items-center gap-1.5 text-xs text-white/45 transition-colors hover:text-red-400">
                         <Trash2 className="size-3.5" /> Remove
                       </button>
@@ -110,11 +119,11 @@ export function CartPage() {
                     <div className="flex items-end justify-between gap-5 sm:flex-col sm:items-end">
                       <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
                       <div className="flex h-10 items-center border border-white/20">
-                        <button type="button" aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity - 1)} className="flex h-full w-10 cursor-pointer items-center justify-center hover:bg-white/10">
+                        <button type="button" disabled={item.quantity <= 1 || Boolean(item.unavailableReason)} aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity - 1)} className="flex h-full w-10 cursor-pointer items-center justify-center hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
                           <Minus className="size-3.5" />
                         </button>
                         <span className="w-8 text-center text-sm" aria-live="polite">{item.quantity}</span>
-                        <button type="button" aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity + 1)} className="flex h-full w-10 cursor-pointer items-center justify-center hover:bg-white/10">
+                        <button type="button" disabled={Boolean(item.unavailableReason) || items.filter((entry) => entry.productId === item.productId && !entry.unavailableReason).reduce((total, entry) => total + entry.quantity, 0) >= (item.stock ?? 99)} aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(item.id, item.quantity + 1)} className="flex h-full w-10 cursor-pointer items-center justify-center hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30">
                           <Plus className="size-3.5" />
                         </button>
                       </div>
@@ -141,9 +150,10 @@ export function CartPage() {
                 <span className="text-sm">Total</span>
                 <div className="text-right"><p className="text-2xl font-medium">{formatPrice(subtotal)}</p><p className="mt-1 text-xs text-white/35">Including VAT</p></div>
               </div>
-              <button type="button" onClick={checkoutViaWhatsApp} className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 bg-yellow-500 text-xs font-medium uppercase tracking-[0.1em] text-black transition-colors hover:bg-yellow-400">
+              <button type="button" disabled={checkoutDisabled} onClick={checkoutViaWhatsApp} className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 bg-yellow-500 text-xs font-medium uppercase tracking-[0.1em] text-black transition-colors hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40">
                 Checkout via WhatsApp
               </button>
+              {items.some((item) => item.unavailableReason) && <p className="mt-3 text-xs text-red-400">Remove unavailable items or choose another variant before checking out.</p>}
               <p className="mt-4 text-center text-xs leading-5 text-white/35">Secure checkout and complimentary delivery across Indonesia.</p>
             </aside>
           </div>
