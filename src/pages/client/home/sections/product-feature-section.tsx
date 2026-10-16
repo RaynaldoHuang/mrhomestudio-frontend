@@ -20,7 +20,7 @@ export function ProductFeatureSection() {
         <div className="relative z-10 flex min-h-120 items-center px-8 py-10 sm:min-h-136 sm:px-12 sm:py-12 lg:min-h-152 lg:px-16 lg:py-14">
           <div className="max-w-2xl">
             <p className="font-neue-haas mb-4 text-xs text-yellow-400 sm:text-sm">
-              Wireless high-fidelity speakers
+              High-fidelity speakers
             </p>
             <h1 className="text-title sm:text-6xl lg:text-6xl sm:leading-[0.92]">
               Sound, beautifully at home.
