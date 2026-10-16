@@ -87,7 +87,6 @@ export function ProductDetailPage() {
               ))}
             </div>
             <div className="relative order-1 aspect-square overflow-hidden bg-white sm:order-2">
-              <span className="absolute top-4 left-4 z-10 bg-black px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-white">New arrival</span>
               {product.images[activeImage] && <img src={product.images[activeImage].url} alt={product.name} className="h-full w-full object-cover" />}
             </div>
           </Reveal>
