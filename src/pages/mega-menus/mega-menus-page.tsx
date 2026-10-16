@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { createMegaMenu, deleteMegaMenu, getAdminMegaMenus, updateMegaMenu, type MegaMenu, type MegaMenuFormValues } from "@/lib/mega-menu-api"
+import { getAdminCategories, type Category } from "@/lib/category-api"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { collectionHref } from "@/lib/collection-links"
 
 const emptyGroup = () => ({ title: "", links: [{ label: "", href: "" }] })
@@ -46,6 +48,7 @@ function valuesFromMenu(menu: MegaMenu): MegaMenuFormValues {
 
 export function MegaMenusPage() {
   const [menus, setMenus] = useState<MegaMenu[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -58,13 +61,17 @@ export function MegaMenusPage() {
   const loadMenus = useCallback(async () => {
     setIsLoading(true)
     setLoadError(false)
-    try { setMenus(await getAdminMegaMenus()) } catch { setLoadError(true) } finally { setIsLoading(false) }
+    try {
+      const [items, categoryItems] = await Promise.all([getAdminMegaMenus(), getAdminCategories()])
+      setMenus(items)
+      setCategories(categoryItems)
+    } catch { setLoadError(true) } finally { setIsLoading(false) }
   }, [])
 
   useEffect(() => {
     let active = true
-    getAdminMegaMenus()
-      .then((items) => { if (active) setMenus(items) })
+    Promise.all([getAdminMegaMenus(), getAdminCategories()])
+      .then(([items, categoryItems]) => { if (active) { setMenus(items); setCategories(categoryItems) } })
       .catch(() => { if (active) setLoadError(true) })
       .finally(() => { if (active) setIsLoading(false) })
     return () => { active = false }
@@ -92,10 +99,23 @@ export function MegaMenusPage() {
     groups: current.groups.map((group, index) => index === groupIndex ? {
       ...group,
       links: group.links.map((link, index) => index === linkIndex
-        ? { ...link, [field]: value, ...(field === "label" ? { href: collectionHref(value) } : {}) }
+        ? { ...link, [field]: value, ...(field === "label" && !link.category_id && (!link.href || link.href === collectionHref(link.label)) ? { href: collectionHref(value) } : {}), ...(field === "href" ? { category_id: null } : {}) }
         : link),
     } : group),
   }))
+
+  const selectCategory = (groupIndex: number, linkIndex: number, value: string | null) => {
+    const category = categories.find((item) => String(item.id) === value)
+    setForm((current) => ({
+      ...current,
+      groups: current.groups.map((group, index) => index === groupIndex ? {
+        ...group,
+        links: group.links.map((link, index) => index === linkIndex
+          ? { ...link, category_id: category?.id ?? null, ...(category ? { label: category.name, href: `/collection/${category.slug}` } : {}) }
+          : link),
+      } : group),
+    }))
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -155,19 +175,29 @@ export function MegaMenusPage() {
             <DialogHeader><DialogTitle>{editingMenu ? "Edit Mega Menu" : "Add Mega Menu"}</DialogTitle><DialogDescription>Configure a main navigation tab, grouped links, and its optional promotion.</DialogDescription></DialogHeader>
             <div className="space-y-6 py-2">
               <section className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="space-y-2"><Label htmlFor="menu-label">Menu label</Label><Input id="menu-label" required value={form.label} placeholder="Speakers" onChange={(event) => setForm({ ...form, label: event.target.value, href: collectionHref(event.target.value) })} /></div>
+                <div className="space-y-2"><Label htmlFor="menu-label">Menu label</Label><Input id="menu-label" required value={form.label} placeholder="Speakers" onChange={(event) => setForm({ ...form, label: event.target.value, href: !editingMenu && (!form.href || form.href === collectionHref(form.label) || form.href === "/collection/") ? collectionHref(event.target.value) : form.href })} /></div>
                 <div className="space-y-2 sm:col-span-2"><Label htmlFor="menu-href">View all URL</Label><Input id="menu-href" required value={form.href} placeholder="/collection/speakers" onChange={(event) => setForm({ ...form, href: event.target.value })} /></div>
                 <div className="space-y-2"><Label htmlFor="menu-order">Order</Label><Input id="menu-order" type="number" min={0} required value={form.sort_order} onChange={(event) => setForm({ ...form, sort_order: Number(event.target.value) })} /></div>
                 <div className="flex items-center justify-between rounded-lg border p-3 sm:col-span-2 lg:col-span-4"><div><Label htmlFor="menu-active">Active menu</Label><p className="text-xs text-muted-foreground">Visible in the website navbar.</p></div><Switch id="menu-active" checked={form.is_active} onCheckedChange={(checked) => setForm({ ...form, is_active: checked })} /></div>
               </section>
 
               <section className="space-y-4">
-                <div className="flex items-center justify-between"><div><h3 className="font-semibold">Link groups</h3><p className="text-sm text-muted-foreground">Add up to three columns of navigation links.</p></div><Button type="button" size="sm" variant="outline" disabled={form.groups.length >= 3} onClick={() => setForm({ ...form, groups: [...form.groups, emptyGroup()] })}><Plus className="size-4" />Add Group</Button></div>
+                <div className="flex items-center justify-between"><div><h3 className="font-semibold">Link groups</h3><p className="text-sm text-muted-foreground">Collection links create categories automatically. You can also select an existing category. Up to three groups.</p></div><Button type="button" size="sm" variant="outline" disabled={form.groups.length >= 3} onClick={() => setForm({ ...form, groups: [...form.groups, emptyGroup()] })}><Plus className="size-4" />Add Group</Button></div>
                 {form.groups.map((group, groupIndex) => (
                   <div key={groupIndex} className="space-y-3 rounded-lg border p-4">
                     <div className="flex gap-2"><Input required value={group.title} placeholder="Group title, e.g. By Type" onChange={(event) => updateGroup(groupIndex, event.target.value)} /><Button type="button" variant="ghost" size="icon" disabled={form.groups.length === 1} onClick={() => setForm({ ...form, groups: form.groups.filter((_, index) => index !== groupIndex) })}><Trash2 className="size-4" /></Button></div>
                     <div className="space-y-2">{group.links.map((link, linkIndex) => (
-                      <div key={linkIndex} className="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto]"><Input required value={link.label} placeholder="Link label" onChange={(event) => updateLink(groupIndex, linkIndex, "label", event.target.value)} /><Input required value={link.href} placeholder="/collection/bookshelf" onChange={(event) => updateLink(groupIndex, linkIndex, "href", event.target.value)} /><Button type="button" variant="ghost" size="icon" disabled={group.links.length === 1} onClick={() => setForm((current) => ({ ...current, groups: current.groups.map((item, index) => index === groupIndex ? { ...item, links: item.links.filter((_, index) => index !== linkIndex) } : item) }))}><Trash2 className="size-4" /></Button></div>
+                      <div key={linkIndex} className="space-y-2 rounded-lg border p-3">
+                        <div className="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto]">
+                          <Input aria-label="Link label" required value={link.label} placeholder="Link label" onChange={(event) => updateLink(groupIndex, linkIndex, "label", event.target.value)} />
+                          <Input aria-label="Link URL" required value={link.href} placeholder="/collection/cd-players" onChange={(event) => updateLink(groupIndex, linkIndex, "href", event.target.value)} />
+                          <Button type="button" variant="ghost" size="icon" aria-label="Remove link" disabled={group.links.length === 1} onClick={() => setForm((current) => ({ ...current, groups: current.groups.map((item, index) => index === groupIndex ? { ...item, links: item.links.filter((_, index) => index !== linkIndex) } : item) }))}><Trash2 className="size-4" /></Button>
+                        </div>
+                        <Select value={link.category_id == null ? "auto" : String(link.category_id)} onValueChange={(value) => selectCategory(groupIndex, linkIndex, value)}>
+                          <SelectTrigger aria-label="Linked category" className="w-full"><SelectValue>{categories.find((category) => category.id === link.category_id)?.name ?? "Create or match category from collection URL"}</SelectValue></SelectTrigger>
+                          <SelectContent><SelectItem value="auto">Create or match category from collection URL</SelectItem>{categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.name}{!category.is_active && " (Inactive)"}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
                     ))}</div>
                     <Button type="button" size="sm" variant="outline" disabled={group.links.length >= 12} onClick={() => setForm((current) => ({ ...current, groups: current.groups.map((item, index) => index === groupIndex ? { ...item, links: [...item.links, { label: "", href: "" }] } : item) }))}><Plus className="size-4" />Add Link</Button>
                   </div>

@@ -81,7 +81,7 @@ export function CartPage() {
               <h2 className="text-xl font-medium">Your cart is empty</h2>
             </div>
             <p className="mt-2 text-sm text-white/50">Explore our collection and find your perfect sound.</p>
-            <Link to="/collection/speakers" className="mt-7 inline-flex h-12 items-center gap-2 bg-yellow-500 px-7 text-sm text-black transition-colors hover:bg-yellow-400">
+            <Link to="/collection/all-products" className="mt-7 inline-flex h-12 items-center gap-2 bg-yellow-500 px-7 text-sm text-black transition-colors hover:bg-yellow-400">
               Explore collection
             </Link>
           </div>
@@ -124,7 +124,7 @@ export function CartPage() {
               ))}
 
               <div className="flex py-7">
-                <Link to="/collection/speakers" className="inline-flex items-center gap-2 text-sm font-reguler underline-offset-8 hover:text-yellow-400">
+                <Link to="/collection/all-products" className="inline-flex items-center gap-2 text-sm font-reguler underline-offset-8 hover:text-yellow-400">
                   <ArrowLeft className="size-4" /> Continue shopping
                 </Link>
               </div>

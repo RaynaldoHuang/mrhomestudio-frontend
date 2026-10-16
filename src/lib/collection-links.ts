@@ -19,7 +19,12 @@ export function collectionHref(label: string) {
 
 export function collectionIdFromHref(href: string) {
   const match = href.match(/\/collection\/([^/?#]+)/)
-  return match?.[1] ?? ""
+  if (!match) return ""
+  try {
+    return collectionHref(decodeURIComponent(match[1])).replace("/collection/", "")
+  } catch {
+    return ""
+  }
 }
 
 export function collectionTitle(id: string, menus: CollectionMenu[], categoryName?: string) {

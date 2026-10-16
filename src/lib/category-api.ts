@@ -9,6 +9,7 @@ export type Category = {
   sort_order: number
   show_on_home: boolean
   is_active: boolean
+  menu_groups: string[]
   products_count?: number
 }
 
@@ -53,7 +54,7 @@ export async function getCategories(homeOnly = false): Promise<Category[]> {
 }
 
 export async function getAdminCategories(): Promise<Category[]> {
-  return (await request<{ data: Category[] }>("/admin/categories")).data
+  return (await request<{ data: Category[] }>("/admin/categories")).data.map((category) => ({ ...category, menu_groups: category.menu_groups ?? [] }))
 }
 
 export async function createCategory(values: CategoryFormValues): Promise<Category> {

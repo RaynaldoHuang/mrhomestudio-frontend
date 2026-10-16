@@ -44,14 +44,6 @@ function toSlug(value: string) {
     .replace(/(^-|-$)/g, "")
 }
 
-function productValues(product: Product) {
-  return [
-    product.category ?? "",
-    ...product.specifications.map((specification) => specification.value),
-    ...product.variants.flatMap((variant) => variant.values),
-  ].map(toSlug).filter(Boolean)
-}
-
 function productMatchesOption(product: Product, group: Pick<DynamicFilterGroup, "source" | "sourceName">, value: string) {
   const normalizedValue = toSlug(value)
 
@@ -73,11 +65,7 @@ function productMatchesOption(product: Product, group: Pick<DynamicFilterGroup, 
     ))
   }
 
-  return productValues(product).some((productValue) => (
-    productValue === normalizedValue
-    || productValue.includes(normalizedValue)
-    || normalizedValue.includes(productValue)
-  ))
+  return product.category_id === Number(value)
 }
 
 function FilterSection({
@@ -137,7 +125,8 @@ function FilterCheckbox({
 
 export function CollectionPage() {
   const { id = "all-products" } = useParams()
-  return <CollectionContent key={id} id={id} />
+  const collectionId = collectionIdFromHref(`/collection/${id}`) || id
+  return <CollectionContent key={collectionId} id={collectionId} />
 }
 
 function CollectionContent({ id }: { id: string }) {
@@ -161,26 +150,17 @@ function CollectionContent({ id }: { id: string }) {
 
   useEffect(() => {
     let active = true
-    getCategories()
-      .then(async (items) => {
+    Promise.all([getCategories(), getPublicMegaMenus(), getProducts(undefined, undefined, id)])
+      .then(([items, menus, collectionProducts]) => {
         if (!active) return
         setCategories(items)
-        const category = items.find((item) => item.slug === id)
-        const categoryProducts = await getProducts(undefined, category?.id)
-        if (active) setProducts(categoryProducts)
+        setMegaMenus(menus)
+        setProducts(collectionProducts)
       })
       .catch(() => active && setLoadError(true))
       .finally(() => active && setIsLoading(false))
     return () => { active = false }
   }, [id])
-
-  useEffect(() => {
-    let active = true
-    getPublicMegaMenus()
-      .then((menus) => { if (active) setMegaMenus(menus) })
-      .catch(() => undefined)
-    return () => { active = false }
-  }, [])
 
   const activeMegaMenu = useMemo(() => megaMenus.find((menu) => (
     collectionIdFromHref(menu.href) === id
@@ -189,42 +169,21 @@ function CollectionContent({ id }: { id: string }) {
 
   const activeCategory = categories.find((category) => category.slug === id)
 
-  const collectionProducts = useMemo(() => {
-    if (id === "all-products") return products
-    if (activeCategory) return products.filter((product) => product.category_id === activeCategory.id)
-
-    const isParentCollection = activeMegaMenu && collectionIdFromHref(activeMegaMenu.href) === id
-    const menuLabels = activeMegaMenu
-      ? isParentCollection
-        ? [activeMegaMenu.label, ...activeMegaMenu.groups.flatMap((group) => group.links.map((link) => link.label))]
-        : activeMegaMenu.groups.flatMap((group) => group.links)
-          .filter((link) => collectionIdFromHref(link.href) === id)
-          .map((link) => link.label)
-      : []
-    const categoryAliases = [id.replaceAll("-", " "), ...menuLabels].map(toSlug)
-
-    return products.filter((product) => {
-      const category = toSlug(product.category ?? "")
-      if (!category) return false
-      return categoryAliases.some((alias) => (
-        category === alias || category.includes(alias) || alias.includes(category)
-      ))
-    })
-  }, [activeCategory, activeMegaMenu, id, products])
+  const collectionProducts = products
 
   const dynamicFilterGroups = useMemo<DynamicFilterGroup[]>(() => {
     const groups: DynamicFilterGroup[] = []
     const usedLabels = new Set<string>()
 
-    activeMegaMenu?.groups.forEach((menuGroup) => {
+    activeMegaMenu?.groups.forEach((menuGroup, groupIndex) => {
       const group: DynamicFilterGroup = {
-        key: `menu:${toSlug(menuGroup.title)}`,
+        key: `menu:${activeMegaMenu.id}:${groupIndex}`,
         label: menuGroup.title.replace(/^by\s+/i, ""),
         source: "menu",
-        options: menuGroup.links.map((link) => ({
+        options: menuGroup.links.filter((link) => link.category_id != null).map((link) => ({
           label: link.label,
-          value: link.label,
-          count: collectionProducts.filter((product) => productMatchesOption(product, { source: "menu" }, link.label)).length,
+          value: String(link.category_id),
+          count: collectionProducts.filter((product) => product.category_id === link.category_id).length,
         })).filter((option) => option.count > 0),
       }
 
@@ -296,10 +255,16 @@ function CollectionContent({ id }: { id: string }) {
   const filteredProducts = useMemo(() => {
     let result = collectionProducts
 
+    const selectedCategoryIds = dynamicFilterGroups.filter((group) => group.source === "menu")
+      .flatMap((group) => selectedFilters[group.key] ?? []).map(Number)
+    if (selectedCategoryIds.length > 0) {
+      result = result.filter((product) => product.category_id !== null && selectedCategoryIds.includes(product.category_id))
+    }
+
     Object.entries(selectedFilters).forEach(([groupKey, selectedValues]) => {
       if (selectedValues.length === 0) return
       const group = dynamicFilterGroups.find((item) => item.key === groupKey)
-      if (!group) return
+      if (!group || group.source === "menu") return
       result = result.filter((product) => selectedValues.some((value) => productMatchesOption(product, group, value)))
     })
 

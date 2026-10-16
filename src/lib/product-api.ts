@@ -100,13 +100,26 @@ function toFormData(values: ProductFormValues): FormData {
   return formData
 }
 
-export async function getProducts(limit?: number, categoryId?: number): Promise<Product[]> {
+export async function getProducts(limit?: number, categoryId?: number, collection?: string): Promise<Product[]> {
   const params = new URLSearchParams()
   if (limit) params.set("limit", String(limit))
   if (categoryId !== undefined) params.set("category_id", String(categoryId))
-  const query = params.size ? `?${params}` : ""
-  const response = await apiRequest<ApiResponse<Product[]>>(`/products${query}`)
-  return response.data
+  if (collection !== undefined) params.set("collection", collection)
+  if (limit !== undefined) {
+    return (await apiRequest<ApiResponse<Product[]>>(`/products?${params}`)).data
+  }
+
+  params.set("limit", "100")
+  const products: Product[] = []
+  const seen = new Set<number>()
+  for (let page = 1; ; page++) {
+    params.set("page", String(page))
+    const { data } = await apiRequest<ApiResponse<Product[]>>(`/products?${params}`)
+    const unseen = data.filter((product) => !seen.has(product.id))
+    products.push(...unseen)
+    unseen.forEach((product) => seen.add(product.id))
+    if (data.length < 100 || unseen.length === 0) return products
+  }
 }
 
 export async function getProduct(id: string | number): Promise<Product> {

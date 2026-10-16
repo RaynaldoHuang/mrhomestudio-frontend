@@ -1,6 +1,7 @@
 import { getAuthHeaders } from "@/lib/auth-api"
 
 export type MegaMenuLink = {
+  category_id?: number | null
   label: string
   href: string
 }
@@ -72,6 +73,7 @@ function toFormData(values: MegaMenuFormValues): FormData {
     group.links.forEach((link, linkIndex) => {
       data.append(`groups[${groupIndex}][links][${linkIndex}][label]`, link.label)
       data.append(`groups[${groupIndex}][links][${linkIndex}][href]`, link.href)
+      if (link.category_id != null) data.append(`groups[${groupIndex}][links][${linkIndex}][category_id]`, String(link.category_id))
     })
   })
 

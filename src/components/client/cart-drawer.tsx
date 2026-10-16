@@ -55,7 +55,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             </div>
             <p className="mt-2 text-sm text-white/45">Find the perfect addition to your listening room.</p>
             <Link
-              to="/collection/speakers"
+              to="/collection/all-products"
               onClick={() => onOpenChange(false)}
               className="mt-7 inline-flex h-12 items-center bg-yellow-500 px-6 text-xs font-medium uppercase tracking-[0.16em] text-black hover:bg-yellow-400"
             >

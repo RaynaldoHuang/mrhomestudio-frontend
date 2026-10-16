@@ -38,7 +38,7 @@ export function ProductCatalogSection() {
           </div>
 
           <Link
-            to="/collection/speakers"
+            to="/collection/all-products"
             className="font-neue-haas hidden h-10 shrink-0 items-center gap-2 rounded-full border border-white/70 px-5 text-xs transition-colors hover:border-yellow-500 hover:bg-yellow-500 hover:text-black sm:inline-flex sm:h-12 sm:px-6 sm:text-sm"
           >
             Explore Collection
@@ -110,7 +110,7 @@ export function ProductCatalogSection() {
         )}
 
         <Link
-          to="/collection/speakers"
+          to="/collection/all-products"
           className="font-neue-haas mt-10 inline-flex h-11 items-center gap-2 rounded-full border border-white/70 px-6 text-xs transition-colors hover:border-yellow-500 hover:bg-yellow-500 hover:text-black sm:hidden"
         >
           Explore Collection

@@ -71,7 +71,7 @@ export function ProductDetailPage() {
       <Container className="max-w-none px-5 py-6 sm:px-8 sm:py-10 lg:px-16 lg:py-14">
         <nav aria-label="Breadcrumb" className="mb-7 flex items-center gap-2 text-xs text-white/45 sm:mb-10">
           <Link to="/" className="hover:text-yellow-400">Home</Link><span>/</span>
-          <Link to={`/collection/${product.category?.toLowerCase() || "all-products"}`} className="hover:text-yellow-400">{product.category || "Products"}</Link><span>/</span>
+          <Link to={`/collection/${product.category_slug || "all-products"}`} className="hover:text-yellow-400">{product.category || "Products"}</Link><span>/</span>
           <span className="truncate text-white/75">{product.name}</span>
         </nav>
 
