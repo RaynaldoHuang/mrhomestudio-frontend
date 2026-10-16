@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { parseVariantValues } from "@/lib/variant-values"
 import { formatRupiahInput } from "@/lib/rupiah-input"
 import { getAdminCategories, type Category } from "@/lib/category-api"
 import {
@@ -27,7 +28,11 @@ import {
   type ProductFormValues,
 } from "@/lib/product-api"
 
-const emptyForm: ProductFormValues = {
+type ProductFormDraft = Omit<ProductFormValues, "variants"> & {
+  variants: Array<{ name: string; valuesText: string }>
+}
+
+const emptyForm: ProductFormDraft = {
   name: "",
   category: "",
   category_id: null,
@@ -44,7 +49,7 @@ const emptyForm: ProductFormValues = {
 
 const formatPrice = (price: number) => `Rp${price.toLocaleString("id-ID")}`
 
-function valuesFromProduct(product: Product): ProductFormValues {
+function valuesFromProduct(product: Product): ProductFormDraft {
   return {
     name: product.name,
     category: product.category ?? "",
@@ -53,7 +58,7 @@ function valuesFromProduct(product: Product): ProductFormValues {
     stock: product.stock,
     description: product.description,
     specifications: product.specifications,
-    variants: product.variants,
+    variants: product.variants.map((variant) => ({ name: variant.name, valuesText: variant.values.join(", ") })),
     is_active: product.is_active,
     show_on_home: product.show_on_home,
     images: [],
@@ -69,7 +74,7 @@ export function ProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
-  const [form, setForm] = useState<ProductFormValues>(emptyForm)
+  const [form, setForm] = useState<ProductFormDraft>(emptyForm)
   const [priceInput, setPriceInput] = useState("0")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -141,13 +146,22 @@ export function ProductsPage() {
       return
     }
 
+    const values: ProductFormValues = {
+      ...form,
+      variants: form.variants.map((variant) => ({ name: variant.name, values: parseVariantValues(variant.valuesText) })),
+    }
+    if (values.variants.some((variant) => variant.values.length === 0)) {
+      toast.error("Enter at least one value for each variant, separated by commas.")
+      return
+    }
+
     setIsSaving(true)
     try {
       if (editingProduct) {
-        await updateProduct(editingProduct.id, form)
+        await updateProduct(editingProduct.id, values)
         toast.success("Product updated successfully.")
       } else {
-        await createProduct(form)
+        await createProduct(values)
         toast.success("Product created successfully.")
       }
       setDialogOpen(false)
@@ -224,8 +238,8 @@ export function ProductsPage() {
               </div>
 
               <div className="space-y-3 sm:col-span-2">
-                <div className="flex items-center justify-between"><div className="space-y-2"><Label>Variants</Label><p className="text-xs text-muted-foreground">Examples: Color, Size, Finish, or Package.</p></div><Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, variants: [...form.variants, { name: "", values: [] }] })}><Plus className="size-4" /> Add Variant</Button></div>
-                {form.variants.map((variant, index) => <div key={index} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_2fr_auto]"><Input required placeholder="Variant name" value={variant.name} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} /><Input required placeholder="Black, White, Walnut" value={variant.values.join(", ")} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, values: event.target.value.split(",").map((value) => value.trim()).filter(Boolean) } : item) })} /><Button type="button" variant="ghost" size="icon" onClick={() => setForm({ ...form, variants: form.variants.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="size-4" /></Button></div>)}
+                <div className="flex items-center justify-between"><div className="space-y-2"><Label>Variants</Label><p className="text-xs text-muted-foreground">Examples: Color, Size, Finish, or Package. Separate values with commas, e.g. Black, White, Walnut.</p></div><Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, variants: [...form.variants, { name: "", valuesText: "" }] })}><Plus className="size-4" /> Add Variant</Button></div>
+                {form.variants.map((variant, index) => <div key={index} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_2fr_auto]"><Input required placeholder="Variant name" value={variant.name} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} /><Input required placeholder="Black, White, Walnut" value={variant.valuesText} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, valuesText: event.target.value } : item) })} /><Button type="button" variant="ghost" size="icon" onClick={() => setForm({ ...form, variants: form.variants.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="size-4" /></Button></div>)}
               </div>
 
               <div className="space-y-3 sm:col-span-2">
