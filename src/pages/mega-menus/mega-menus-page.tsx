@@ -15,8 +15,6 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { createMegaMenu, deleteMegaMenu, getAdminMegaMenus, updateMegaMenu, type MegaMenu, type MegaMenuFormValues } from "@/lib/mega-menu-api"
-import { getAdminCategories, type Category } from "@/lib/category-api"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { collectionHref } from "@/lib/collection-links"
 
 const emptyGroup = () => ({ title: "", links: [{ label: "", href: "" }] })
@@ -48,7 +46,6 @@ function valuesFromMenu(menu: MegaMenu): MegaMenuFormValues {
 
 export function MegaMenusPage() {
   const [menus, setMenus] = useState<MegaMenu[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -62,16 +59,14 @@ export function MegaMenusPage() {
     setIsLoading(true)
     setLoadError(false)
     try {
-      const [items, categoryItems] = await Promise.all([getAdminMegaMenus(), getAdminCategories()])
-      setMenus(items)
-      setCategories(categoryItems)
+      setMenus(await getAdminMegaMenus())
     } catch { setLoadError(true) } finally { setIsLoading(false) }
   }, [])
 
   useEffect(() => {
     let active = true
-    Promise.all([getAdminMegaMenus(), getAdminCategories()])
-      .then(([items, categoryItems]) => { if (active) { setMenus(items); setCategories(categoryItems) } })
+    getAdminMegaMenus()
+      .then((items) => { if (active) setMenus(items) })
       .catch(() => { if (active) setLoadError(true) })
       .finally(() => { if (active) setIsLoading(false) })
     return () => { active = false }
@@ -103,19 +98,6 @@ export function MegaMenusPage() {
         : link),
     } : group),
   }))
-
-  const selectCategory = (groupIndex: number, linkIndex: number, value: string | null) => {
-    const category = categories.find((item) => String(item.id) === value)
-    setForm((current) => ({
-      ...current,
-      groups: current.groups.map((group, index) => index === groupIndex ? {
-        ...group,
-        links: group.links.map((link, index) => index === linkIndex
-          ? { ...link, category_id: category?.id ?? null, ...(category ? { label: category.name, href: `/collection/${category.slug}` } : {}) }
-          : link),
-      } : group),
-    }))
-  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -182,7 +164,7 @@ export function MegaMenusPage() {
               </section>
 
               <section className="space-y-4">
-                <div className="flex items-center justify-between"><div className="space-y-2"><h3 className="font-semibold">Link groups</h3><p className="text-sm text-muted-foreground">Collection links create categories automatically. You can also select an existing category. Up to three groups.</p></div><Button type="button" size="sm" variant="outline" disabled={form.groups.length >= 3} onClick={() => setForm({ ...form, groups: [...form.groups, emptyGroup()] })}><Plus className="size-4" />Add Group</Button></div>
+                <div className="flex items-center justify-between"><div className="space-y-2"><h3 className="font-semibold">Link groups</h3><p className="text-sm text-muted-foreground">Category names follow collection link labels automatically. Add up to three groups.</p></div><Button type="button" size="sm" variant="outline" disabled={form.groups.length >= 3} onClick={() => setForm({ ...form, groups: [...form.groups, emptyGroup()] })}><Plus className="size-4" />Add Group</Button></div>
                 {form.groups.map((group, groupIndex) => (
                   <div key={groupIndex} className="space-y-3 rounded-lg border p-4">
                     <div className="flex gap-2"><Input required value={group.title} placeholder="Group title, e.g. By Type" onChange={(event) => updateGroup(groupIndex, event.target.value)} /><Button type="button" variant="ghost" size="icon" disabled={form.groups.length === 1} onClick={() => setForm({ ...form, groups: form.groups.filter((_, index) => index !== groupIndex) })}><Trash2 className="size-4" /></Button></div>
@@ -193,10 +175,6 @@ export function MegaMenusPage() {
                           <Input aria-label="Link URL" required value={link.href} placeholder="/collection/cd-players" onChange={(event) => updateLink(groupIndex, linkIndex, "href", event.target.value)} />
                           <Button type="button" variant="ghost" size="icon" aria-label="Remove link" disabled={group.links.length === 1} onClick={() => setForm((current) => ({ ...current, groups: current.groups.map((item, index) => index === groupIndex ? { ...item, links: item.links.filter((_, index) => index !== linkIndex) } : item) }))}><Trash2 className="size-4" /></Button>
                         </div>
-                        <Select value={link.category_id == null ? "auto" : String(link.category_id)} onValueChange={(value) => selectCategory(groupIndex, linkIndex, value)}>
-                          <SelectTrigger aria-label="Linked category" className="w-full"><SelectValue>{categories.find((category) => category.id === link.category_id)?.name ?? "Create or match category from collection URL"}</SelectValue></SelectTrigger>
-                          <SelectContent><SelectItem value="auto">Create or match category from collection URL</SelectItem>{categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.name}{!category.is_active && " (Inactive)"}</SelectItem>)}</SelectContent>
-                        </Select>
                       </div>
                     ))}</div>
                     <Button type="button" size="sm" variant="outline" disabled={group.links.length >= 12} onClick={() => setForm((current) => ({ ...current, groups: current.groups.map((item, index) => index === groupIndex ? { ...item, links: [...item.links, { label: "", href: "" }] } : item) }))}><Plus className="size-4" />Add Link</Button>

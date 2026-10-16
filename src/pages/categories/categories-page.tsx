@@ -94,12 +94,12 @@ export function CategoriesPage() {
   if (loadError) return <ErrorState title="Unable to load categories" description="Please try again." onRetry={() => void loadCategories()} />
 
   const groups = [...new Set(categories.flatMap((category) => category.menu_groups))].sort((a, b) => a.localeCompare(b))
-  const groupFilter = selectedGroup === "unlinked" || groups.some((group) => `group:${group}` === selectedGroup) ? selectedGroup : "all"
+  const groupFilter = groups.some((group) => `group:${group}` === selectedGroup) ? selectedGroup : "all"
   const filteredCategories = categories.filter((category) => (
     groupFilter === "all"
-    || (groupFilter === "unlinked" ? category.menu_groups.length === 0 : category.menu_groups.includes(groupFilter.slice(6)))
+    || category.menu_groups.includes(groupFilter.slice(6))
   ))
-  const groupLabel = groupFilter === "all" ? "All groups" : groupFilter === "unlinked" ? "Not linked to a menu" : groupFilter.slice(6)
+  const groupLabel = groupFilter === "all" ? "All groups" : groupFilter.slice(6)
   const cover = preview?.file === form.image ? preview?.url : editing?.image_url
 
   return (
@@ -114,7 +114,6 @@ export function CategoriesPage() {
               <SelectContent>
                 <SelectItem value="all">All groups</SelectItem>
                 {groups.map((group) => <SelectItem key={group} value={`group:${group}`}>{group}</SelectItem>)}
-                {categories.some((category) => category.menu_groups.length === 0) && <SelectItem value="unlinked">Not linked to a menu</SelectItem>}
               </SelectContent>
             </Select>
           </div>
@@ -141,9 +140,9 @@ export function CategoriesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <form onSubmit={handleSubmit} className="contents">
-            <DialogHeader><DialogTitle>Edit Category</DialogTitle><DialogDescription>Covers are optional until you display a category on the homepage. Renaming a category keeps its URL and product assignments.</DialogDescription></DialogHeader>
+            <DialogHeader><DialogTitle>Edit Category</DialogTitle><DialogDescription>Covers are optional until you display a category on the homepage. Category names are managed through link labels in Mega Menu.</DialogDescription></DialogHeader>
             <div className="grid gap-5 py-2">
-              <div className="space-y-2"><Label htmlFor="category-name">Category name</Label><Input id="category-name" required maxLength={100} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
+              <div className="space-y-2"><Label htmlFor="category-name">Category name</Label><Input id="category-name" required readOnly={Boolean(editing?.menu_groups.length)} maxLength={100} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
               <div className="space-y-2"><Label htmlFor="category-description">Short description</Label><Textarea id="category-description" rows={3} maxLength={2000} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></div>
               <div className="space-y-2"><Label htmlFor="category-image">Cover image</Label>{cover && <img src={cover} alt="Category cover preview" className="h-48 w-full rounded-lg border object-cover" />}<Input id="category-image" type="file" accept="image/jpeg,image/png,image/webp" required={form.show_on_home && !editing?.image_url && !form.image} onChange={(event) => setForm({ ...form, image: event.target.files?.[0] ?? null })} /><p className="text-xs text-muted-foreground">JPG, PNG, or WebP. Maximum 8 MB. Automatically optimized to WebP.</p></div>
               <div className="space-y-2"><Label htmlFor="category-order">Display order</Label><Input id="category-order" required type="number" min={0} value={form.sort_order} onChange={(event) => setForm({ ...form, sort_order: Number(event.target.value) })} /></div>
