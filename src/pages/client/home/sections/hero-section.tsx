@@ -117,7 +117,7 @@ export function HeroSection() {
                     <p className="font-neue-haas mb-2 text-base font-light text-white/90 sm:mb-3 sm:text-lg">
                       {slide.eyebrow}
                     </p>
-                    <h1 className="font-degular w-5/6 text-title text-white sm:text-6xl lg:text-6xl sm:leading-16">
+                    <h1 className="font-degular w-5/6 text-title text-white sm:text-6xl lg:text-6xl sm:leading-16 max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">
                       {slide.title}
                     </h1>
 

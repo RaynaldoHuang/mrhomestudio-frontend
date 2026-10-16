@@ -23,7 +23,7 @@ export function BestSellersSection() {
       <Container className="max-w-none px-8 sm:px-12 lg:px-16">
         <div className="mb-8 flex items-center justify-between gap-6 sm:mb-10">
           <div>
-            <h1 className="font-degular text-title sm:text-5xl lg:text-4xl sm:leading-none">
+            <h1 className="font-degular text-title sm:text-5xl lg:text-4xl sm:leading-none max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">
               Best Sellers
             </h1>
           </div>
@@ -52,11 +52,11 @@ export function BestSellersSection() {
               <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/10 to-black/5" />
 
               <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-5 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8 lg:p-10">
-                <div>
+                <div className="min-w-0 w-full sm:w-auto sm:flex-1">
                   <p className="font-neue-haas mb-2 text-base text-yellow-400">
                     Premium selection
                   </p>
-                  <h1 className="font-degular text-title sm:text-4xl sm:leading-none">
+                  <h1 title={item.name} className="max-sm:truncate font-degular text-title sm:text-4xl sm:leading-none max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">
                     {item.name}
                   </h1>
                 </div>

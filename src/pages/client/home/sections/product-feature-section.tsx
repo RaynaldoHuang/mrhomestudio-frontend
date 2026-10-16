@@ -22,7 +22,7 @@ export function ProductFeatureSection() {
             <p className="font-neue-haas mb-4 text-xs text-yellow-400 sm:text-sm">
               High-fidelity speakers
             </p>
-            <h1 className="text-title sm:text-6xl lg:text-6xl sm:leading-[0.92]">
+            <h1 className="text-title sm:text-6xl lg:text-6xl sm:leading-[0.92] max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">
               Sound, beautifully at home.
             </h1>
             <p className="font-degular mt-5 max-w-xl text-sm leading-6 text-white/80 sm:text-base sm:leading-6 font-ligth">

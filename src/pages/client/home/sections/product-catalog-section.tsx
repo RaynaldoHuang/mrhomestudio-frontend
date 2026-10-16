@@ -32,7 +32,7 @@ export function ProductCatalogSection() {
       <Container className="max-w-none px-8 sm:px-12 lg:px-16">
         <div className="mb-8 flex items-end justify-between gap-6 sm:mb-10">
           <div>
-            <h1 className="font-degular text-title tracking-wide sm:text-5xl lg:text-4xl sm:leading-none">
+            <h1 className="font-degular text-title tracking-wide sm:text-5xl lg:text-4xl sm:leading-none max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">
               Hear the Difference
             </h1>
           </div>
@@ -94,11 +94,11 @@ export function ProductCatalogSection() {
                   </div>
 
                   <div className="pt-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="font-neue-haas text-sm font-normal leading-snug text-white transition-colors group-hover:text-yellow-400 sm:text-sm">
+                    <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                      <p title={product.name} className="font-neue-haas text-sm font-normal leading-snug text-white transition-colors group-hover:text-yellow-400 max-sm:truncate sm:text-sm">
                         {product.name}
                       </p>
-                      <p className="font-neue-haas shrink-0 text-sm font-nornaml text-white sm:text-sm">
+                      <p className="font-neue-haas shrink-0 text-sm font-normal text-white sm:text-sm">
                         Rp{product.price.toLocaleString("id-ID")}
                       </p>
                     </div>

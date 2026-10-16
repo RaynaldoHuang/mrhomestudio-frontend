@@ -64,7 +64,7 @@ export function CategoriesSection() {
     <section className="overflow-hidden bg-black pb-20 text-white sm:pb-24 lg:pb-28">
       <Container className="max-w-none px-8 sm:px-12 lg:px-16">
         <div className="mb-8 sm:mb-10">
-          <h1 className="font-degular text-title sm:text-5xl lg:text-4xl sm:leading-none">
+          <h1 className="font-degular text-title sm:text-5xl lg:text-4xl sm:leading-none max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">
             Play Anything. Hear Everything.
           </h1>
         </div>

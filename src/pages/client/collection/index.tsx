@@ -466,7 +466,7 @@ function CollectionContent({ id }: { id: string }) {
                 <div className="relative aspect-square overflow-hidden bg-neutral-100">
                   {product.thumbnail_url ? <img src={product.thumbnail_url} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div className="h-full w-full bg-neutral-200" />}
                 </div>
-                <div className="pt-2"><div className="flex items-start justify-between gap-3"><div><p className="text-sm leading-snug transition-colors group-hover:text-yellow-400">{product.name}</p>{product.category && <p className="mt-1 text-xs text-white/40">{product.category}</p>}</div><p className="shrink-0 text-sm">Rp{product.price.toLocaleString("id-ID")}</p></div></div>
+                <div className="pt-2"><div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3"><div className="min-w-0"><p title={product.name} className="text-sm leading-snug transition-colors group-hover:text-yellow-400 max-sm:truncate">{product.name}</p>{product.category && <p className="mt-1 text-xs text-white/40">{product.category}</p>}</div><p className="shrink-0 text-sm">Rp{product.price.toLocaleString("id-ID")}</p></div></div>
               </Link>
             </Reveal>
           ))}
