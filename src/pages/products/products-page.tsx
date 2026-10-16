@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react"
 import { Image, Loader2, Package, Pencil, Plus, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 
@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { formatRupiahInput } from "@/lib/rupiah-input"
 import { getAdminCategories, type Category } from "@/lib/category-api"
 import {
   createProduct,
@@ -69,6 +70,7 @@ export function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [form, setForm] = useState<ProductFormValues>(emptyForm)
+  const [priceInput, setPriceInput] = useState("0")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -100,15 +102,28 @@ export function ProductsPage() {
   const totalImages = existingImages.length + form.images.length
 
   const openCreateDialog = () => {
+    setPriceInput("0")
     setEditingProduct(null)
     setForm({ ...emptyForm, specifications: [], variants: [], images: [], remove_image_ids: [] })
     setDialogOpen(true)
   }
 
   const openEditDialog = (product: Product) => {
+    setPriceInput(product.price.toLocaleString("id-ID"))
     setEditingProduct(product)
     setForm(valuesFromProduct(product))
     setDialogOpen(true)
+  }
+
+  const handlePriceChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const { text, amount, caret } = formatRupiahInput(input.value, input.selectionStart ?? input.value.length)
+    if (!Number.isSafeInteger(amount)) return
+    setPriceInput(text)
+    setForm((current) => ({ ...current, price: amount }))
+    requestAnimationFrame(() => {
+      if (document.activeElement === input) input.setSelectionRange(caret, caret)
+    })
   }
 
   const handleImages = (files: FileList | null) => {
@@ -195,21 +210,21 @@ export function ProductsPage() {
             <div className="grid gap-5 py-2 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-name">Product name</Label><Input id="product-name" required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
               <div className="space-y-2"><Label htmlFor="product-category">Category</Label><Select value={form.category_id === null ? "none" : String(form.category_id)} onValueChange={(value) => setForm({ ...form, category_id: value === "none" || value === null ? null : Number(value), category: categories.find((category) => String(category.id) === value)?.name ?? "" })}><SelectTrigger id="product-category"><SelectValue>{categories.find((category) => category.id === form.category_id)?.name ?? "No category"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="none">No category</SelectItem>{categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.menu_groups.length > 0 ? `${category.menu_groups.join(", ")} → ${category.name}` : category.name}{!category.is_active && " (Inactive)"}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground">Categories follow Mega Menu collection links. Manage covers and visibility in Admin → Categories.</p></div>
-              <div className="space-y-2"><Label htmlFor="product-price">Price (Rp)</Label><Input id="product-price" type="number" min={0} required value={form.price} onChange={(event) => setForm({ ...form, price: Number(event.target.value) })} /></div>
+              <div className="space-y-2"><Label htmlFor="product-price">Price (Rp)</Label><Input id="product-price" type="text" inputMode="numeric" pattern="[0-9.]*" required value={priceInput} onChange={handlePriceChange} /></div>
               <div className="space-y-2"><Label htmlFor="product-stock">Stock</Label><Input id="product-stock" type="number" min={0} required value={form.stock} onChange={(event) => setForm({ ...form, stock: Number(event.target.value) })} /></div>
-              <div className="flex items-center justify-between rounded-lg border p-3"><div><Label htmlFor="product-active">Active product</Label><p className="text-xs text-muted-foreground">Visible on the website.</p></div><Switch id="product-active" checked={form.is_active} onCheckedChange={(checked) => setForm({ ...form, is_active: checked })} /></div>
+              <div className="flex items-center justify-between rounded-lg border p-3"><div className="space-y-2"><Label htmlFor="product-active">Active product</Label><p className="text-xs text-muted-foreground">Visible on the website.</p></div><Switch id="product-active" checked={form.is_active} onCheckedChange={(checked) => setForm({ ...form, is_active: checked })} /></div>
               <div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2"><div><Label htmlFor="product-home">Tampilkan di homepage (Best Sellers)</Label><p className="mt-1 text-xs text-muted-foreground">Produk aktif yang dipilih akan tampil di section Best Sellers menggunakan gambar pertama produk.</p></div><Switch id="product-home" checked={form.show_on_home} onCheckedChange={(checked) => setForm({ ...form, show_on_home: checked })} /></div>
               <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-description">Description</Label><Textarea id="product-description" required rows={5} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></div>
 
               <div className="space-y-3 sm:col-span-2">
-                <div className="flex items-center justify-between"><div><Label>Product images ({totalImages}/5)</Label><p className="text-xs text-muted-foreground">JPG, PNG, or WebP, maximum 8 MB each. Automatically optimized to WebP. The first image is the thumbnail.</p></div></div>
+                <div className="flex items-center justify-between"><div className="space-y-2"><Label>Product images ({totalImages}/5)</Label><p className="text-xs text-muted-foreground">JPG, PNG, or WebP, maximum 8 MB each. Automatically optimized to WebP. The first image is the thumbnail.</p></div></div>
                 {existingImages.length > 0 && <div className="flex flex-wrap gap-3">{existingImages.map((image, index) => <div key={image.id} className="relative"><img src={image.url} alt="" className="size-24 rounded-lg border object-cover" />{index === 0 && <Badge className="absolute bottom-1 left-1 text-[10px]">Thumbnail</Badge>}<button type="button" aria-label="Remove image" onClick={() => setForm((current) => ({ ...current, remove_image_ids: [...current.remove_image_ids, image.id] }))} className="absolute -top-2 -right-2 flex size-6 cursor-pointer items-center justify-center rounded-full bg-destructive text-white"><X className="size-3" /></button></div>)}</div>}
                 <Input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={existingImages.length >= 5} onChange={(event) => handleImages(event.target.files)} />
                 {form.images.length > 0 && <p className="text-xs text-muted-foreground">New: {form.images.map((file) => file.name).join(", ")}</p>}
               </div>
 
               <div className="space-y-3 sm:col-span-2">
-                <div className="flex items-center justify-between"><div><Label>Variants</Label><p className="text-xs text-muted-foreground">Examples: Color, Size, Finish, or Package.</p></div><Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, variants: [...form.variants, { name: "", values: [] }] })}><Plus className="size-4" /> Add Variant</Button></div>
+                <div className="flex items-center justify-between"><div className="space-y-2"><Label>Variants</Label><p className="text-xs text-muted-foreground">Examples: Color, Size, Finish, or Package.</p></div><Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, variants: [...form.variants, { name: "", values: [] }] })}><Plus className="size-4" /> Add Variant</Button></div>
                 {form.variants.map((variant, index) => <div key={index} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_2fr_auto]"><Input required placeholder="Variant name" value={variant.name} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} /><Input required placeholder="Black, White, Walnut" value={variant.values.join(", ")} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, values: event.target.value.split(",").map((value) => value.trim()).filter(Boolean) } : item) })} /><Button type="button" variant="ghost" size="icon" onClick={() => setForm({ ...form, variants: form.variants.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="size-4" /></Button></div>)}
               </div>
 
