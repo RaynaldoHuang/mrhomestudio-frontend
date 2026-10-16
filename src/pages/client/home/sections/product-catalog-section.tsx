@@ -88,9 +88,6 @@ export function ProductCatalogSection() {
                   >
                     {product.thumbnail_url ? <img src={product.thumbnail_url} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div className="h-full w-full bg-neutral-200" />}
 
-                    <span className="font-neue-haas absolute top-3 left-3 bg-black px-2.5 py-1 text-[10px] uppercase tracking-widest text-white sm:top-4 sm:left-4">
-                      Best seller
-                    </span>
                   </div>
 
                   <div className="pt-2">
