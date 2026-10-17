@@ -45,7 +45,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
       >
         <SheetHeader className="shrink-0 border-b border-white/10 px-5 py-6 pr-16 sm:px-8 sm:py-7">
           <div className="flex items-baseline gap-3">
-            <SheetTitle className="font-degular text-xl font-normal text-white">Added to your cart</SheetTitle>
+            <SheetTitle className="font-degular text-xl font-normal text-white">Your cart</SheetTitle>
             <span className="text-xs text-white/40">{itemCount} {itemCount === 1 ? "item" : "items"}</span>
           </div>
         </SheetHeader>

@@ -12,6 +12,42 @@ export type CartItem = {
   unavailableReason?: string
 }
 
+function normalizeVariantText(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLowerCase()
+}
+
+function normalizeVariantName(value: string): string {
+  const name = normalizeVariantText(value)
+  return ["color", "colors", "colour", "colours"].includes(name) ? "color" : name
+}
+
+function resolveSelectedVariants(item: CartItem, product: Product): Record<string, string> | undefined {
+  // Older carts only saved the display label. Do not persist failed guesses as empty selections.
+  const saved = item.selectedVariants && (Object.keys(item.selectedVariants).length > 0 || item.colour === "Standard")
+    && Object.values(item.selectedVariants).every((value) => value.trim())
+    ? Object.entries(item.selectedVariants)
+    : item.colour === "Standard" ? [] : item.colour.split(", ").map((label) => {
+      const separator = label.indexOf(":")
+      return separator < 0 ? ["", label] : [label.slice(0, separator), label.slice(separator + 1)]
+    })
+
+  if (saved.length !== product.variants.length) return undefined
+  const selected: Record<string, string> = {}
+  const used = new Set<number>()
+  for (const variant of product.variants) {
+    const matches = saved.flatMap(([name, value], index) => {
+      if (used.has(index) || (normalizeVariantName(name) !== normalizeVariantName(variant.name)
+        && !(name === "" && product.variants.length === 1))) return []
+      const values = variant.values.filter((option) => normalizeVariantText(option) === normalizeVariantText(value))
+      return values.length === 1 ? [{ index, value: values[0] }] : []
+    })
+    if (matches.length !== 1) return undefined
+    used.add(matches[0].index)
+    selected[variant.name] = matches[0].value
+  }
+  return selected
+}
+
 export function synchronizeCart(items: CartItem[], products: Map<number, Product | null>): CartItem[] {
   return items.map((item) => {
     if (!products.has(item.productId)) return item
@@ -20,15 +56,8 @@ export function synchronizeCart(items: CartItem[], products: Map<number, Product
       return { ...item, unavailableReason: "This product is no longer available." }
     }
 
-    const selectedVariants = item.selectedVariants ?? Object.fromEntries(product.variants.map((variant) => [
-      variant.name,
-      variant.values.find((value) => item.colour.split(", ").includes(`${variant.name}: ${value}`)
-        || (product.variants.length === 1 && item.colour === value)) ?? "",
-    ]))
-    const variantsValid = !(item.selectedVariants === undefined && product.variants.length === 0 && item.colour !== "Standard")
-      && product.variants.every((variant) => variant.values.includes(selectedVariants[variant.name]))
-      && Object.keys(selectedVariants).every((name) => product.variants.some((variant) => variant.name === name))
-    const unavailableReason = !variantsValid
+    const selectedVariants = resolveSelectedVariants(item, product)
+    const unavailableReason = !selectedVariants
       ? "This variant is no longer available. Please choose another option on the product page."
       : undefined
 
@@ -37,10 +66,10 @@ export function synchronizeCart(items: CartItem[], products: Map<number, Product
       name: product.name,
       price: product.price,
       image: product.thumbnail_url ?? product.images[0]?.url ?? null,
-      colour: variantsValid
+      colour: selectedVariants
         ? product.variants.map((variant) => `${variant.name}: ${selectedVariants[variant.name]}`).join(", ") || "Standard"
         : item.colour,
-      selectedVariants,
+      selectedVariants: selectedVariants ?? item.selectedVariants,
       unavailableReason,
     }
   })

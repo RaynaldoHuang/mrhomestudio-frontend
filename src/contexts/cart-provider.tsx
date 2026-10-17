@@ -67,10 +67,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const addItem = (item: AddCartItem) => {
       const id = `${item.productId}-${item.colour.toLowerCase()}`
       setItems((current) => {
-        const existing = current.find((cartItem) => cartItem.id === id)
+        const existing = current.find((cartItem) => cartItem.id === id
+          || (cartItem.productId === item.productId && cartItem.colour === item.colour))
         const quantity = Math.min(Number.MAX_SAFE_INTEGER, (existing?.quantity ?? 0) + item.quantity)
         if (!existing) return [...current, { ...item, id, quantity }]
-        return current.map((cartItem) => cartItem.id === id ? { ...item, id, quantity } : cartItem)
+        return current.map((cartItem) => cartItem.id === existing.id ? { ...item, id: existing.id, quantity } : cartItem)
       })
     }
 

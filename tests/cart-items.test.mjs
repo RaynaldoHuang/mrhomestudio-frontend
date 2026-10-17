@@ -90,3 +90,47 @@ test("zero legacy stock does not block an active product", () => {
   assert.equal(item.quantity, 10)
   assert.equal(item.unavailableReason, undefined)
 })
+
+test("refresh accepts equivalent color labels and uses the current admin spelling", () => {
+  for (const selectedVariants of [undefined, { Color: "Aluminium" }, { Color: "" }]) {
+    const [item] = synchronizeCart([cartItem({ selectedVariants })], new Map([[1, product({
+      variants: [{ name: "Colours", values: [" aluminium ", "Black"] }],
+    })]]))
+    assert.equal(item.unavailableReason, undefined)
+    assert.deepEqual(item.selectedVariants, { Colours: " aluminium " })
+    assert.equal(item.price * item.quantity, 139650000)
+  }
+})
+
+test("repeated refresh and browser reload preserve item count and quantities", () => {
+  const products = new Map([[1, product({ variants: [{ name: "Colors", values: ["Aluminium", "Black"] }] })]])
+  const initial = synchronizeCart([cartItem()], products)
+  let restored = initial
+  for (let refresh = 0; refresh < 5; refresh++) {
+    restored = synchronizeCart(parseStoredCart(JSON.parse(JSON.stringify(restored))), products)
+  }
+  assert.deepEqual(restored, initial)
+  assert.equal(restored.length, 1)
+  assert.equal(restored[0].quantity, 3)
+  assert.deepEqual(synchronizeCart([], products), [])
+})
+
+test("invalid legacy selections can recover when the same admin option returns", () => {
+  const [invalid] = synchronizeCart([cartItem()], new Map([[1, product({ variants: [{ name: "Color", values: ["White"] }] })]]))
+  assert.equal(invalid.selectedVariants, undefined)
+  const [restored] = synchronizeCart([invalid], new Map([[1, product()]]))
+  assert.equal(restored.unavailableReason, undefined)
+  assert.equal(restored.colour, "Color: Aluminium")
+})
+
+test("different groups and ambiguous options cannot silently replace a selection", () => {
+  for (const variants of [
+    [{ name: "Finish", values: ["Aluminium"] }],
+    [{ name: "Color", values: ["Aluminium", " aluminium "] }],
+    [],
+  ]) {
+    const [item] = synchronizeCart([cartItem({ selectedVariants: {} })], new Map([[1, product({ variants })]]))
+    assert.match(item.unavailableReason, /variant is no longer available/)
+    assert.equal(item.colour, "Color: Aluminium")
+  }
+})
