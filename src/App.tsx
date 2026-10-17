@@ -68,6 +68,9 @@ const ProductsPage = lazy(() =>
     default: ProductsPage,
   })),
 )
+const BrandsPage = lazy(() =>
+  import("@/pages/brands/brands-page").then(({ BrandsPage }) => ({ default: BrandsPage })),
+)
 const CategoriesPage = lazy(() =>
   import("@/pages/categories/categories-page").then(({ CategoriesPage }) => ({ default: CategoriesPage })),
 )
@@ -125,6 +128,7 @@ export default function App() {
                 element={<ProductsPage />}
               />
               <Route path="categories" element={<CategoriesPage />} />
+              <Route path="brands" element={<BrandsPage />} />
 
               <Route
                 path="profile"

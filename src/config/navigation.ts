@@ -33,12 +33,17 @@ export const navigation = [
     ],
   },
   {
-    title: "Management",
+    title: "Master Data",
     items: [
       {
         title: "Products",
         href: "/admin/products",
         icon: Package,
+      },
+      {
+        title: "Merek",
+        href: "/admin/brands",
+        icon: Tags,
       },
       {
         title: "Categories",

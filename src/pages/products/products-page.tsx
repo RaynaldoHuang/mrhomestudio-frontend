@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react"
 import { Image, Loader2, Package, Pencil, Plus, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
+import { Link } from "react-router-dom"
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -20,6 +21,7 @@ import { specificationLabel } from "@/lib/specification-label"
 import { parseVariantValues } from "@/lib/variant-values"
 import { formatRupiahInput } from "@/lib/rupiah-input"
 import { getAdminCategories, type Category } from "@/lib/category-api"
+import { getAdminBrands, type Brand } from "@/lib/brand-api"
 import {
   createProduct,
   deleteProduct,
@@ -37,7 +39,7 @@ const emptyForm: ProductFormDraft = {
   name: "",
   category: "",
   category_id: null,
-  brand: "",
+  brand_id: null,
   price: 0,
   description: "",
   specifications: [],
@@ -55,7 +57,7 @@ function valuesFromProduct(product: Product): ProductFormDraft {
     name: product.name,
     category: product.category ?? "",
     category_id: product.category_id,
-    brand: product.brand ?? "",
+    brand_id: product.brand_id ?? null,
     price: product.price,
     description: product.description,
     specifications: product.specifications.map((specification) => ({ ...specification, name: specificationLabel(specification.name) })),
@@ -69,6 +71,7 @@ function valuesFromProduct(product: Product): ProductFormDraft {
 
 export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -84,7 +87,10 @@ export function ProductsPage() {
     setIsLoading(true)
     setLoadError(false)
     try {
-      setProducts(await getAdminProducts())
+      const [items, categoryItems, brandItems] = await Promise.all([getAdminProducts(), getAdminCategories(), getAdminBrands()])
+      setProducts(items)
+      setCategories(categoryItems)
+      setBrands(brandItems)
     } catch {
       setLoadError(true)
     } finally {
@@ -94,8 +100,8 @@ export function ProductsPage() {
 
   useEffect(() => {
     let active = true
-    Promise.all([getAdminProducts(), getAdminCategories()])
-      .then(([items, categoryItems]) => { if (active) { setProducts(items); setCategories(categoryItems) } })
+    Promise.all([getAdminProducts(), getAdminCategories(), getAdminBrands()])
+      .then(([items, categoryItems, brandItems]) => { if (active) { setProducts(items); setCategories(categoryItems); setBrands(brandItems) } })
       .catch(() => { if (active) setLoadError(true) })
       .finally(() => { if (active) setIsLoading(false) })
     return () => { active = false }
@@ -106,7 +112,6 @@ export function ProductsPage() {
     [editingProduct, form.remove_image_ids],
   )
   const totalImages = existingImages.length + form.images.length
-  const brands = [...new Set(products.map((product) => product.brand).filter((brand): brand is string => Boolean(brand)))].sort((a, b) => a.localeCompare(b))
 
   const openCreateDialog = () => {
     setPriceInput("0")
@@ -228,7 +233,7 @@ export function ProductsPage() {
               <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-name">Product name</Label><Input id="product-name" required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
               <div className="space-y-2"><Label htmlFor="product-category">Category</Label><Select value={form.category_id === null ? "none" : String(form.category_id)} onValueChange={(value) => setForm({ ...form, category_id: value === "none" || value === null ? null : Number(value), category: categories.find((category) => String(category.id) === value)?.name ?? "" })}><SelectTrigger id="product-category"><SelectValue>{categories.find((category) => category.id === form.category_id)?.name ?? (form.category_id === null ? "No category" : "Category removed from Mega Menu")}</SelectValue></SelectTrigger><SelectContent><SelectItem value="none">No category</SelectItem>{categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.menu_groups.length > 0 ? `${category.menu_groups.join(", ")} → ${category.name}` : category.name}{!category.is_active && " (Inactive)"}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground">Categories follow Mega Menu collection links. Manage covers and visibility in Admin → Categories.</p></div>
               <div className="space-y-2"><Label htmlFor="product-price">Price (Rp)</Label><Input id="product-price" type="text" inputMode="numeric" pattern="[0-9.]*" required value={priceInput} onChange={handlePriceChange} /></div>
-              <div className="space-y-2"><Label htmlFor="product-brand">Merek produk</Label><Input id="product-brand" list="product-brands" maxLength={100} placeholder="Masukkan atau pilih merek" value={form.brand} onChange={(event) => setForm({ ...form, brand: event.target.value })} /><datalist id="product-brands">{brands.map((brand) => <option key={brand} value={brand} />)}</datalist><p className="text-xs text-muted-foreground">Merek yang disimpan akan tersedia di filter katalog.</p></div>
+              <div className="space-y-2"><Label htmlFor="product-brand">Merek produk</Label><Select value={form.brand_id === null ? "none" : String(form.brand_id)} onValueChange={(value) => setForm({ ...form, brand_id: value === null || value === "none" ? null : Number(value) })}><SelectTrigger id="product-brand"><SelectValue>{brands.find((brand) => brand.id === form.brand_id)?.name ?? "Tanpa merek"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="none">Tanpa merek</SelectItem>{brands.map((brand) => <SelectItem key={brand.id} value={String(brand.id)}>{brand.name}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground">Kelola pilihan di <Link to="/admin/brands" className="underline">Master Data → Merek</Link>.</p></div>
               <div className="flex items-center justify-between rounded-lg border p-3"><div className="space-y-2"><Label htmlFor="product-active">Active product</Label><p className="text-xs text-muted-foreground">Visible on the website.</p></div><Switch id="product-active" checked={form.is_active} onCheckedChange={(checked) => setForm({ ...form, is_active: checked })} /></div>
               <div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2"><div><Label htmlFor="product-home">Tampilkan di homepage (Best Sellers)</Label><p className="mt-1 text-xs text-muted-foreground">Produk aktif yang dipilih akan tampil di section Best Sellers menggunakan gambar pertama produk.</p></div><Switch id="product-home" checked={form.show_on_home} onCheckedChange={(checked) => setForm({ ...form, show_on_home: checked })} /></div>
               <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-description">Description</Label><Textarea id="product-description" required rows={5} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></div>
