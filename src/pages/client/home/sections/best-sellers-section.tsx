@@ -37,7 +37,7 @@ export function BestSellersSection() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-x-6 gap-y-12 md:grid-cols-2 lg:grid-cols-3 lg:gap-x-8">
+        <div className="grid grid-cols-1 gap-x-1 gap-y-10 md:grid-cols-2 md:gap-x-1.5 lg:grid-cols-3 lg:gap-x-2 lg:gap-y-12">
           {bestSellers.map((item) => (
             <article key={item.id} className="group flex min-w-0 flex-col">
               <Link
@@ -57,7 +57,7 @@ export function BestSellersSection() {
                 <h2 title={item.name} className="w-full font-degular text-lg font-normal leading-tight tracking-normal max-sm:truncate sm:text-2xl">
                   {item.name}
                 </h2>
-                <p className="font-neue-haas mt-3 mb-6 line-clamp-2 min-h-12 text-sm leading-6 text-white/60 sm:text-base">
+                <p className="font-neue-haas mt-3 mb-6 line-clamp-2 min-h-12 w-full pr-4 text-sm leading-6 text-white/60 sm:pr-6 sm:text-base">
                   {item.description}
                 </p>
                 <Link
