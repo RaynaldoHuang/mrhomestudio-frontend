@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -16,25 +16,10 @@ function formatPrice(value: number) {
 
 export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
   const { items, itemCount, subtotal, updateQuantity, removeItem, refreshProducts, isSyncing, syncError } = useCart()
-  const [removingIds, setRemovingIds] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
     if (open) void refreshProducts()
   }, [open, refreshProducts])
-
-  const removeItemSmoothly = (id: string) => {
-    if (removingIds.has(id)) return
-
-    setRemovingIds((current) => new Set(current).add(id))
-    window.setTimeout(() => {
-      removeItem(id)
-      setRemovingIds((current) => {
-        const next = new Set(current)
-        next.delete(id)
-        return next
-      })
-    }, 300)
-  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -70,11 +55,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
             {items.length > 0 && (isSyncing || syncError) && <p role="status" className="px-5 pt-4 text-xs text-white/60 sm:px-8">{isSyncing ? "Updating cart from the latest product data…" : <>Unable to update product data. <button type="button" onClick={() => void refreshProducts()} className="underline">Retry</button></>}</p>}
             <div className="min-h-0 flex-1 overflow-y-auto px-5 sm:px-8">
               {items.map((item) => (
-                <article key={item.id} className={`grid grid-cols-[6rem_minmax(0,1fr)] gap-4 overflow-hidden transition-all duration-300 ease-out sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-6 ${
-                  removingIds.has(item.id)
-                    ? "max-h-0 translate-x-4 py-0 opacity-0"
-                    : "max-h-[22rem] py-6 opacity-100"
-                }`}>
+                <article key={item.id} className="grid grid-cols-[6rem_minmax(0,1fr)] gap-4 py-6 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-6">
                   <Link
                     to={`/product/${item.productId}`}
                     onClick={() => onOpenChange(false)}
@@ -105,7 +86,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                           <Plus className="size-3" />
                         </button>
                       </div>
-                      <button type="button" disabled={removingIds.has(item.id)} onClick={() => removeItemSmoothly(item.id)} className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-white/40 hover:text-red-400">
+                      <button type="button" onClick={() => removeItem(item.id)} className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-white/40 hover:text-red-400">
                         <Trash2 className="size-3.5" /> Remove
                       </button>
                     </div>

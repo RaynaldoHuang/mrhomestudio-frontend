@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -11,27 +11,12 @@ function formatPrice(value: number) {
 
 export function CartPage() {
   const { items, itemCount, subtotal, updateQuantity, removeItem, refreshProducts, isSyncing, syncError } = useCart()
-  const [removingIds, setRemovingIds] = useState<Set<string>>(() => new Set())
 
   const checkoutDisabled = isSyncing || syncError || items.some((item) => item.unavailableReason)
 
   useEffect(() => {
     void refreshProducts()
   }, [refreshProducts])
-
-  const removeItemSmoothly = (id: string) => {
-    if (removingIds.has(id)) return
-
-    setRemovingIds((current) => new Set(current).add(id))
-    window.setTimeout(() => {
-      removeItem(id)
-      setRemovingIds((current) => {
-        const next = new Set(current)
-        next.delete(id)
-        return next
-      })
-    }, 300)
-  }
 
   const checkoutViaWhatsApp = () => {
     if (checkoutDisabled) return
@@ -97,11 +82,7 @@ export function CartPage() {
           <div className="grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_28rem]">
             <div className="min-w-0 border border-white/10 bg-neutral-950 px-5 sm:px-8">
               {items.map((item) => (
-                <article key={item.id} className={`grid min-w-0 grid-cols-[5rem_minmax(0,1fr)] gap-4 overflow-hidden border-b border-white/10 transition-all duration-300 ease-out last:border-0 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8 ${
-                  removingIds.has(item.id)
-                    ? "max-h-0 -translate-x-4 py-0 opacity-0 sm:py-0"
-                    : "max-h-[30rem] py-7 opacity-100 sm:py-8"
-                }`}>
+                <article key={item.id} className="grid min-w-0 grid-cols-[5rem_minmax(0,1fr)] gap-4 border-b border-white/10 py-6 last:border-0 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8">
                   <Link to={`/product/${item.productId}`} className="aspect-square overflow-hidden bg-white">
                     {item.image && <img src={item.image} alt={item.name} className="h-full w-full object-contain" />}
                   </Link>
@@ -111,7 +92,7 @@ export function CartPage() {
                       <Link to={`/product/${item.productId}`} title={item.name} className="block text-base font-normal wrap-anywhere transition-colors hover:text-yellow-400 max-sm:truncate sm:text-lg sm:font-medium">{item.name}</Link>
                       <p className="mt-1 text-sm wrap-anywhere text-white/45">Variant: {item.colour}</p>
                       {item.unavailableReason && <p className="mt-2 text-xs wrap-anywhere text-red-400">{item.unavailableReason}</p>}
-                      <button type="button" disabled={removingIds.has(item.id)} onClick={() => removeItemSmoothly(item.id)} className="mt-5 inline-flex cursor-pointer items-center gap-1.5 text-xs text-white/45 transition-colors hover:text-red-400">
+                      <button type="button" onClick={() => removeItem(item.id)} className="mt-5 inline-flex cursor-pointer items-center gap-1.5 text-xs text-white/45 transition-colors hover:text-red-400">
                         <Trash2 className="size-3.5" /> Remove
                       </button>
                     </div>
