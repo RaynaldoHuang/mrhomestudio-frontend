@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { Check, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react"
+import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react"
+import { Check, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
 
 import { Container } from "@/components/client/container"
@@ -22,52 +22,11 @@ import {
 import { getPublicMegaMenus, type MegaMenu } from "@/lib/mega-menu-api"
 import { getProducts, type Product } from "@/lib/product-api"
 import { getCategories, type Category } from "@/lib/category-api"
-import { menuDisplayGroups } from "@/lib/menu-display"
-import { specificationLabel } from "@/lib/specification-label"
+import { catalogFilterGroups, emptyCatalogFilters, filterCatalogProducts, type CatalogFilterKey, type CatalogFilters } from "@/lib/catalog-filters"
+import { formatRupiahInput } from "@/lib/rupiah-input"
 import { collectionIdFromHref, collectionTitle } from "@/lib/collection-links"
 
 const productsPerPage = 16
-type FilterSource = "menu" | "category" | "specification" | "variant"
-
-type DynamicFilterGroup = {
-  key: string
-  label: string
-  source: FilterSource
-  sourceName?: string
-  options: Array<{ label: string; value: string; count: number }>
-}
-
-function toSlug(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-}
-
-function productMatchesOption(product: Product, group: Pick<DynamicFilterGroup, "source" | "sourceName">, value: string) {
-  const normalizedValue = toSlug(value)
-
-  if (group.source === "category") {
-    return toSlug(product.category ?? "") === normalizedValue
-  }
-
-  if (group.source === "specification") {
-    return product.specifications.some((specification) => (
-      toSlug(specification.name) === toSlug(group.sourceName ?? "")
-      && toSlug(specification.value) === normalizedValue
-    ))
-  }
-
-  if (group.source === "variant") {
-    return product.variants.some((variant) => (
-      toSlug(variant.name) === toSlug(group.sourceName ?? "")
-      && variant.values.some((variantValue) => toSlug(variantValue) === normalizedValue)
-    ))
-  }
-
-  return product.category_id === Number(value)
-}
 
 function FilterSection({
   title,
@@ -131,7 +90,7 @@ export function CollectionPage() {
 }
 
 function CollectionContent({ id }: { id: string }) {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [megaMenus, setMegaMenus] = useState<MegaMenu[]>([])
@@ -139,13 +98,13 @@ function CollectionContent({ id }: { id: string }) {
   const [loadError, setLoadError] = useState(false)
   const [sortBy, setSortBy] = useState("latest")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({})
+  const [selectedFilters, setSelectedFilters] = useState<CatalogFilters>(emptyCatalogFilters)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    sorting: true,
-    price: false,
+    price: true,
   })
   const [minimumPrice, setMinimumPrice] = useState("")
   const [maximumPrice, setMaximumPrice] = useState("")
+  const [brandSearch, setBrandSearch] = useState("")
 
   useEffect(() => {
     let active = true
@@ -161,122 +120,12 @@ function CollectionContent({ id }: { id: string }) {
     return () => { active = false }
   }, [id])
 
-  const activeMegaMenu = useMemo(() => megaMenus.find((menu) => (
-    collectionIdFromHref(menu.href) === id
-    || menu.groups.some((group) => group.links.some((link) => collectionIdFromHref(link.href) === id))
-  )), [id, megaMenus])
-
   const activeCategory = categories.find((category) => category.slug === id)
-
-  const collectionProducts = products
-
-  const dynamicFilterGroups = useMemo<DynamicFilterGroup[]>(() => {
-    const groups: DynamicFilterGroup[] = []
-    const usedLabels = new Set<string>()
-
-    menuDisplayGroups(activeMegaMenu?.groups ?? [], activeMegaMenu?.display_mode).forEach((menuGroup, groupIndex) => {
-      const group: DynamicFilterGroup = {
-        key: `menu:${activeMegaMenu?.id}:${groupIndex}`,
-        label: menuGroup.title.replace(/^by\s+/i, "") || "Category",
-        source: "menu",
-        options: menuGroup.links.filter((link) => link.category_id != null).map((link) => ({
-          label: link.label,
-          value: String(link.category_id),
-          count: collectionProducts.filter((product) => product.category_id === link.category_id).length,
-        })).filter((option) => option.count > 0),
-      }
-
-      if (group.options.length > 0) {
-        groups.push(group)
-        usedLabels.add(toSlug(group.label))
-      }
-    })
-
-    const categories = [...new Set(collectionProducts.map((product) => product.category).filter((value): value is string => Boolean(value)))]
-    if (categories.length > 1 && !usedLabels.has("category")) {
-      groups.push({
-        key: "category",
-        label: "Category",
-        source: "category",
-        options: categories.sort().map((category) => ({
-          label: category,
-          value: category,
-          count: collectionProducts.filter((product) => toSlug(product.category ?? "") === toSlug(category)).length,
-        })),
-      })
-      usedLabels.add("category")
-    }
-
-    const specificationValues = new Map<string, { label: string; values: Set<string> }>()
-    const variantValues = new Map<string, { label: string; values: Set<string> }>()
-
-    collectionProducts.forEach((product) => {
-      product.specifications.forEach((specification) => {
-        const key = toSlug(specification.name)
-        if (!key || !specification.value.trim()) return
-        const current = specificationValues.get(key) ?? { label: specification.name, values: new Set<string>() }
-        current.values.add(specification.value.trim())
-        specificationValues.set(key, current)
-      })
-
-      product.variants.forEach((variant) => {
-        const key = toSlug(variant.name)
-        if (!key) return
-        const current = variantValues.get(key) ?? { label: variant.name, values: new Set<string>() }
-        variant.values.filter(Boolean).forEach((value) => current.values.add(value.trim()))
-        variantValues.set(key, current)
-      })
-    })
-
-    const appendDataGroups = (source: "specification" | "variant", entries: typeof specificationValues) => {
-      entries.forEach(({ label, values }, normalizedName) => {
-        if (usedLabels.has(normalizedName) || values.size === 0) return
-        const groupBase = { source, sourceName: label } as const
-        groups.push({
-          key: `${source}:${normalizedName}`,
-          label: source === "specification" ? specificationLabel(label) : label,
-          ...groupBase,
-          options: [...values].sort().map((value) => ({
-            label: value,
-            value,
-            count: collectionProducts.filter((product) => productMatchesOption(product, groupBase, value)).length,
-          })),
-        })
-        usedLabels.add(normalizedName)
-      })
-    }
-
-    appendDataGroups("specification", specificationValues)
-    appendDataGroups("variant", variantValues)
-    return groups
-  }, [activeMegaMenu, collectionProducts])
+  const dynamicFilterGroups = useMemo(() => catalogFilterGroups(products), [products])
+  const priceRangeInvalid = minimumPrice !== "" && maximumPrice !== "" && Number(minimumPrice) > Number(maximumPrice)
 
   const filteredProducts = useMemo(() => {
-    let result = collectionProducts
-
-    const selectedCategoryIds = dynamicFilterGroups.filter((group) => group.source === "menu")
-      .flatMap((group) => selectedFilters[group.key] ?? []).map(Number)
-    if (selectedCategoryIds.length > 0) {
-      result = result.filter((product) => product.category_id !== null && selectedCategoryIds.includes(product.category_id))
-    }
-
-    Object.entries(selectedFilters).forEach(([groupKey, selectedValues]) => {
-      if (selectedValues.length === 0) return
-      const group = dynamicFilterGroups.find((item) => item.key === groupKey)
-      if (!group || group.source === "menu") return
-      result = result.filter((product) => selectedValues.some((value) => productMatchesOption(product, group, value)))
-    })
-
-    const parsedMinimumPrice = Number(minimumPrice)
-    const parsedMaximumPrice = Number(maximumPrice)
-
-    if (minimumPrice !== "" && Number.isFinite(parsedMinimumPrice)) {
-      result = result.filter((product) => product.price >= parsedMinimumPrice)
-    }
-
-    if (maximumPrice !== "" && Number.isFinite(parsedMaximumPrice)) {
-      result = result.filter((product) => product.price <= parsedMaximumPrice)
-    }
+    const result = filterCatalogProducts(products, selectedFilters, minimumPrice, maximumPrice)
 
     return [...result].sort((a, b) => {
       if (sortBy === "price-low") return a.price - b.price
@@ -284,15 +133,15 @@ function CollectionContent({ id }: { id: string }) {
       if (sortBy === "name") return a.name.localeCompare(b.name)
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
-  }, [collectionProducts, dynamicFilterGroups, maximumPrice, minimumPrice, selectedFilters, sortBy])
+  }, [products, maximumPrice, minimumPrice, selectedFilters, sortBy])
 
-  const activeFilterCount = Number(sortBy !== "latest")
-    + Number(minimumPrice !== "" || maximumPrice !== "")
-    + Object.values(selectedFilters).filter((values) => values.length > 0).length
+  const activeFilterCount = Number(minimumPrice !== "" || maximumPrice !== "")
+    + Object.values(selectedFilters).reduce((count, values) => count + values.length, 0)
 
   function resetFilters() {
-    setSortBy("latest")
-    setSelectedFilters({})
+    resetPage()
+    setSelectedFilters(emptyCatalogFilters())
+    setBrandSearch("")
     setMinimumPrice("")
     setMaximumPrice("")
   }
@@ -301,8 +150,28 @@ function CollectionContent({ id }: { id: string }) {
     setOpenSections((current) => ({ ...current, [key]: !(current[key] ?? true) }))
   }
 
+  function resetPage() {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.delete("page")
+      return next
+    }, { replace: true, preventScrollReset: true })
+  }
 
-  function toggleDynamicFilter(groupKey: string, value: string) {
+  function handlePriceChange(event: ChangeEvent<HTMLInputElement>, bound: "minimum" | "maximum") {
+    const input = event.currentTarget
+    const { text, amount, caret } = formatRupiahInput(input.value, input.selectionStart ?? input.value.length)
+    if (!Number.isSafeInteger(amount)) return
+    resetPage()
+    const setPrice = bound === "minimum" ? setMinimumPrice : setMaximumPrice
+    setPrice(text === "" ? "" : String(amount))
+    requestAnimationFrame(() => {
+      if (document.activeElement === input) input.setSelectionRange(caret, caret)
+    })
+  }
+
+  function toggleDynamicFilter(groupKey: CatalogFilterKey, value: string) {
+    resetPage()
     setSelectedFilters((current) => {
       const selected = current[groupKey] ?? []
       return {
@@ -330,21 +199,45 @@ function CollectionContent({ id }: { id: string }) {
             <p className="mt-2 text-sm text-white/60">{filteredProducts.length} items</p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsFilterOpen(true)}
-            className="group inline-flex w-fit items-center gap-2 py-2 text-sm text-white/75 transition-colors hover:text-yellow-400"
-            aria-label="Show product filters"
-          >
-            <SlidersHorizontal className="size-4 stroke-[1.6]" aria-hidden="true" />
-            <span>Show Filters</span>
-            {activeFilterCount > 0 && (
-              <span className="flex size-5 items-center justify-center rounded-full bg-yellow-400 text-[10px] font-medium text-black">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+          <div className="flex flex-wrap items-center gap-5">
+            <Select value={sortBy} onValueChange={(value) => { resetPage(); setSortBy(value ?? "latest") }}>
+              <SelectTrigger aria-label="Urutkan produk" className="h-11 w-48 rounded-none border-white/20 bg-neutral-950 px-3 text-white hover:bg-white/5 focus-visible:border-yellow-400 focus-visible:ring-0 [&_svg]:text-white/60">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent
+                side="bottom"
+                align="start"
+                sideOffset={6}
+                className="rounded-none bg-neutral-900 p-1 text-white shadow-xl ring-1 ring-white/15"
+              >
+                <SelectItem value="latest" className="rounded-none text-white hover:bg-white/10 focus:bg-white/10 focus:!text-white data-[highlighted]:bg-white/10 data-[highlighted]:!text-white [&_*]:!text-white">Terbaru</SelectItem>
+                <SelectItem value="price-low" className="rounded-none text-white hover:bg-white/10 focus:bg-white/10 focus:!text-white data-[highlighted]:bg-white/10 data-[highlighted]:!text-white [&_*]:!text-white">Harga Terendah</SelectItem>
+                <SelectItem value="price-high" className="rounded-none text-white hover:bg-white/10 focus:bg-white/10 focus:!text-white data-[highlighted]:bg-white/10 data-[highlighted]:!text-white [&_*]:!text-white">Harga Tertinggi</SelectItem>
+                <SelectItem value="name" className="rounded-none text-white hover:bg-white/10 focus:bg-white/10 focus:!text-white data-[highlighted]:bg-white/10 data-[highlighted]:!text-white [&_*]:!text-white">Nama A–Z</SelectItem>
+              </SelectContent>
+            </Select>
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen(true)}
+              className="group inline-flex w-fit items-center gap-2 py-2 text-sm text-white/75 transition-colors hover:text-yellow-400"
+              aria-label="Tampilkan filter produk"
+            >
+              <SlidersHorizontal className="size-4 stroke-[1.6]" aria-hidden="true" />
+              <span>Filter Produk</span>
+              {activeFilterCount > 0 && (
+                <span className="flex size-5 items-center justify-center rounded-full bg-yellow-400 text-[10px] font-medium text-black">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
         </Reveal>
+
+        {activeFilterCount > 0 && <div className="mb-8 flex flex-wrap items-center gap-2" aria-label="Filter aktif">
+          {dynamicFilterGroups.flatMap((group) => group.options.filter((option) => selectedFilters[group.key].includes(option.value)).map((option) => <button key={`${group.key}:${option.value}`} type="button" onClick={() => toggleDynamicFilter(group.key, option.value)} aria-label={`Hapus filter ${group.label}: ${option.label}`} className="inline-flex items-center gap-2 border border-white/25 px-3 py-1.5 text-xs text-white/80 hover:border-yellow-400">{group.label}: {option.label}<X className="size-3" /></button>))}
+          {(minimumPrice !== "" || maximumPrice !== "") && <button type="button" onClick={() => { resetPage(); setMinimumPrice(""); setMaximumPrice("") }} aria-label="Hapus filter harga" className="inline-flex items-center gap-2 border border-white/25 px-3 py-1.5 text-xs text-white/80 hover:border-yellow-400">Rp{Number(minimumPrice || 0).toLocaleString("id-ID")} – {maximumPrice === "" ? "Tanpa batas" : `Rp${Number(maximumPrice).toLocaleString("id-ID")}`}<X className="size-3" /></button>}
+          <button type="button" onClick={resetFilters} className="px-2 py-1.5 text-xs text-yellow-400">Hapus semua</button>
+        </div>}
 
         <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <SheetContent
@@ -353,36 +246,13 @@ function CollectionContent({ id }: { id: string }) {
             overlayClassName="bg-black/65"
           >
             <SheetHeader className="border-b border-white/12 px-6 py-5 pr-14">
-              <SheetTitle className="text-lg font-medium text-white">Filter by</SheetTitle>
+              <SheetTitle className="text-lg font-medium text-white">Filter Produk</SheetTitle>
               <SheetDescription className="sr-only">
-                Sort and filter the available products.
+                Pilih kategori, merek, dan harga produk.
               </SheetDescription>
             </SheetHeader>
 
             <div className="flex-1 overflow-y-auto px-6">
-              <FilterSection
-                title="Sort by"
-                open={openSections.sorting ?? true}
-                onToggle={() => toggleSection("sorting")}
-              >
-                <Select value={sortBy} onValueChange={(value) => setSortBy(value ?? "latest")}>
-                  <SelectTrigger className="h-11 rounded-none border-white/20 bg-neutral-950 px-3 text-white hover:bg-white/5 focus-visible:border-yellow-400 focus-visible:ring-0 [&_svg]:text-white/60">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent
-                    side="bottom"
-                    align="start"
-                    sideOffset={6}
-                    className="rounded-none bg-neutral-900 p-1 text-white shadow-xl ring-1 ring-white/15"
-                  >
-                    <SelectItem value="latest" className="rounded-none text-white hover:bg-white/10 focus:bg-white/10 focus:!text-white data-[highlighted]:bg-white/10 data-[highlighted]:!text-white [&_*]:!text-white">Latest</SelectItem>
-                    <SelectItem value="price-low" className="rounded-none text-white hover:bg-white/10 focus:bg-white/10 focus:!text-white data-[highlighted]:bg-white/10 data-[highlighted]:!text-white [&_*]:!text-white">Price: low to high</SelectItem>
-                    <SelectItem value="price-high" className="rounded-none text-white hover:bg-white/10 focus:bg-white/10 focus:!text-white data-[highlighted]:bg-white/10 data-[highlighted]:!text-white [&_*]:!text-white">Price: high to low</SelectItem>
-                    <SelectItem value="name" className="rounded-none text-white hover:bg-white/10 focus:bg-white/10 focus:!text-white data-[highlighted]:bg-white/10 data-[highlighted]:!text-white [&_*]:!text-white">Name: A–Z</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterSection>
-
               {dynamicFilterGroups.map((group) => (
                 <FilterSection
                   key={group.key}
@@ -390,7 +260,10 @@ function CollectionContent({ id }: { id: string }) {
                   open={openSections[group.key] ?? true}
                   onToggle={() => toggleSection(group.key)}
                 >
-                  {group.options.map((option) => {
+                  {group.key === "brand" && group.options.length > 0 && <input type="search" aria-label="Cari merek" placeholder="Cari merek…" value={brandSearch} onChange={(event) => setBrandSearch(event.target.value)} className="h-10 w-full border border-white/20 bg-transparent px-3 text-sm text-white outline-none focus:border-yellow-400" />}
+                  {group.options.length === 0 && <p className="text-sm text-white/45">{group.key === "brand" ? "Belum ada merek pada produk di koleksi ini." : "Belum ada kategori pada produk di koleksi ini."}</p>}
+                  {group.key === "brand" && group.options.length > 0 && !group.options.some((option) => option.label.toLowerCase().includes(brandSearch.trim().toLowerCase())) && <p className="text-sm text-white/45">Merek tidak ditemukan.</p>}
+                  {group.options.filter((option) => group.key !== "brand" || option.label.toLowerCase().includes(brandSearch.trim().toLowerCase())).map((option) => {
                     const checked = (selectedFilters[group.key] ?? []).includes(option.value)
                     return <FilterCheckbox key={option.value} label={option.label} count={option.count} checked={checked} onChange={() => toggleDynamicFilter(group.key, option.value)} />
                   })}
@@ -398,42 +271,41 @@ function CollectionContent({ id }: { id: string }) {
               ))}
 
               <FilterSection
-                title="Price"
-                open={openSections.price ?? false}
+                title="Harga"
+                open={openSections.price ?? true}
                 onToggle={() => toggleSection("price")}
               >
                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
                   <label className="grid min-w-0 gap-2 text-xs text-white/45">
-                    Minimum
+                    Harga minimum
                     <div className="flex h-11 min-w-0 items-center overflow-hidden border border-white/20 bg-neutral-950 px-3 focus-within:border-yellow-400">
                       <span className="mr-2 text-white/35">Rp</span>
                       <input
-                        type="number"
-                        min="0"
+                        type="text"
                         inputMode="numeric"
-                        value={minimumPrice}
-                        onChange={(event) => setMinimumPrice(event.target.value)}
+                        value={minimumPrice === "" ? "" : Number(minimumPrice).toLocaleString("id-ID")}
+                        onChange={(event) => handlePriceChange(event, "minimum")}
                         placeholder="0"
-                        className="w-full min-w-0 flex-1 appearance-none bg-transparent text-sm text-white outline-none placeholder:text-white/25 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        className="w-full min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/25"
                       />
                     </div>
                   </label>
                   <label className="grid min-w-0 gap-2 text-xs text-white/45">
-                    Maximum
+                    Harga maksimum
                     <div className="flex h-11 min-w-0 items-center overflow-hidden border border-white/20 bg-neutral-950 px-3 focus-within:border-yellow-400">
                       <span className="mr-2 text-white/35">Rp</span>
                       <input
-                        type="number"
-                        min="0"
+                        type="text"
                         inputMode="numeric"
-                        value={maximumPrice}
-                        onChange={(event) => setMaximumPrice(event.target.value)}
-                        placeholder="Any"
-                        className="w-full min-w-0 flex-1 appearance-none bg-transparent text-sm text-white outline-none placeholder:text-white/25 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        value={maximumPrice === "" ? "" : Number(maximumPrice).toLocaleString("id-ID")}
+                        onChange={(event) => handlePriceChange(event, "maximum")}
+                        placeholder="Tanpa batas"
+                        className="w-full min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/25"
                       />
                     </div>
                   </label>
                 </div>
+                {priceRangeInvalid && <p role="alert" className="text-xs text-red-300">Harga maksimum harus sama dengan atau lebih besar dari harga minimum.</p>}
               </FilterSection>
             </div>
 
@@ -444,14 +316,15 @@ function CollectionContent({ id }: { id: string }) {
                 disabled={activeFilterCount === 0}
                 className="h-11 border border-white/25 px-3 text-sm text-white transition-colors hover:border-white/60 disabled:cursor-not-allowed disabled:opacity-30"
               >
-                Reset filters
+                Reset
               </button>
               <button
                 type="button"
                 onClick={() => setIsFilterOpen(false)}
-                className="h-11 bg-yellow-400 px-3 text-sm font-medium text-black transition-colors hover:bg-yellow-300"
+                disabled={priceRangeInvalid}
+                className="h-11 bg-yellow-400 px-3 text-sm font-medium text-black transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Show {filteredProducts.length} products
+                Tampilkan {filteredProducts.length} Produk
               </button>
             </SheetFooter>
           </SheetContent>
@@ -467,7 +340,7 @@ function CollectionContent({ id }: { id: string }) {
                 <div className="relative aspect-square overflow-hidden bg-neutral-100">
                   {product.thumbnail_url ? <img src={product.thumbnail_url} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div className="h-full w-full bg-neutral-200" />}
                 </div>
-                <div className="pt-2"><div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3"><div className="min-w-0"><p title={product.name} className="text-sm leading-snug transition-colors group-hover:text-yellow-400 max-sm:truncate">{product.name}</p>{product.category && <p className="mt-1 text-xs text-white/40">{product.category}</p>}</div><p className="shrink-0 text-sm">Rp{product.price.toLocaleString("id-ID")}</p></div></div>
+                <div className="pt-2"><div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3"><div className="min-w-0"><p title={product.name} className="text-sm leading-snug transition-colors group-hover:text-yellow-400 max-sm:truncate">{product.name}</p>{product.brand && <p className="mb-1 text-xs text-white/50">{product.brand}</p>}{product.category && <p className="mt-1 text-xs text-white/40">{product.category}</p>}</div><p className="shrink-0 text-sm">Rp{product.price.toLocaleString("id-ID")}</p></div></div>
               </Link>
             </Reveal>
           ))}
