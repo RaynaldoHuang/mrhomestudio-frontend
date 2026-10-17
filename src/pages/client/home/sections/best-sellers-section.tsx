@@ -37,7 +37,7 @@ export function BestSellersSection() {
           </Link>
         </div>
 
-        <div className="grid gap-x-6 gap-y-12 md:grid-cols-2 lg:gap-x-8">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-3 lg:gap-x-8">
           {bestSellers.map((item) => (
             <article key={item.id} className="group flex min-w-0 flex-col">
               <Link
