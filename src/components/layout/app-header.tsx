@@ -1,9 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { Bell, LogOut, Moon, Search, Sun, UserRound } from "lucide-react"
+import { Bell, LogOut, Moon, Sun, UserRound } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { AdminSearch } from "@/components/layout/admin-search"
 import { AppBreadcrumb } from "@/components/layout/app-breadcrumb"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -98,18 +99,7 @@ export function AppHeader() {
             <AppBreadcrumb />
 
             <div className="ml-auto flex items-center gap-1">
-                <Button
-                    variant="outline"
-                    className="hidden h-9 w-52 justify-start text-muted-foreground md:flex lg:w-60"
-                >
-                    <Search className="mr-2 size-4" />
-
-                    <span>Search...</span>
-
-                    <kbd className="ml-auto rounded border border-border/50 bg-muted px-1.5 text-[10px]">
-                        ⌘ K
-                    </kbd>
-                </Button>
+                <AdminSearch />
 
                 <Button
                     variant="ghost"
