@@ -29,7 +29,7 @@ export function BestSellersSection() {
           </div>
 
           <Link
-            to="/services"
+            to="/collection/all-products"
             className="font-neue-haas inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-white/70 px-5 text-xs transition-colors hover:border-yellow-500 hover:bg-yellow-500 hover:text-black sm:h-12 sm:px-6 sm:text-sm"
           >
             See All
@@ -39,32 +39,31 @@ export function BestSellersSection() {
 
         <div className="grid gap-5 md:grid-cols-2 lg:gap-6">
           {bestSellers.map((item) => (
-            <article
-              key={item.id}
-              className="group relative aspect-4/5 overflow-hidden bg-neutral-900 sm:aspect-5/4 lg:aspect-[1.05/1]"
-            >
-              {item.thumbnail_url && <img
-                src={item.thumbnail_url}
-                alt={item.name}
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-              />}
-              <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/10 to-black/5" />
+            <article key={item.id} className="group flex min-w-0 flex-col">
+              <Link
+                to={`/product/${item.id}`}
+                aria-label={`View ${item.name}`}
+                className="relative block aspect-4/5 overflow-hidden bg-neutral-100 sm:aspect-5/4 lg:aspect-[1.05/1]"
+              >
+                {item.thumbnail_url && <img
+                  src={item.thumbnail_url}
+                  alt={item.name}
+                  loading="lazy"
+                  className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                />}
+              </Link>
 
-              <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-5 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8 lg:p-10">
-                <div className="min-w-0 w-full sm:w-auto sm:flex-1">
-                  <p className="font-neue-haas mb-2 text-base text-yellow-400">
-                    Premium selection
-                  </p>
-                  <h1 title={item.name} className="max-sm:truncate font-degular text-title sm:text-4xl sm:leading-none max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">
-                    {item.name}
-                  </h1>
-                </div>
-
+              <div className="flex min-w-0 flex-1 flex-col items-start pt-5 sm:pt-6">
+                <h2 title={item.name} className="w-full font-degular text-2xl font-normal leading-tight tracking-normal max-sm:truncate sm:text-4xl">
+                  {item.name}
+                </h2>
+                <p className="font-neue-haas mt-3 mb-6 line-clamp-2 min-h-12 text-sm leading-6 text-white/60 sm:text-base">
+                  {item.description}
+                </p>
                 <Link
                   to={`/product/${item.id}`}
                   aria-label={`Shop ${item.name}`}
-                  className="font-neue-haas inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-white/80 px-5 text-xs transition-colors hover:border-yellow-500 hover:bg-yellow-500 hover:text-black sm:h-11 sm:px-6 sm:text-sm"
+                  className="font-neue-haas mt-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-white/80 px-5 text-xs transition-colors hover:border-yellow-500 hover:bg-yellow-500 hover:text-black sm:h-11 sm:px-6 sm:text-sm"
                 >
                   Shop Now
                   <ArrowUpRight className="size-4" aria-hidden="true" />
