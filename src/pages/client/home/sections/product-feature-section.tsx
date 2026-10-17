@@ -11,7 +11,7 @@ export function ProductFeatureSection() {
           src={featureImage}
           alt="Premium speakers integrated into a modern living space"
           loading="lazy"
-          className="block h-auto w-full object-cover object-center sm:absolute sm:inset-0 sm:h-full"
+          className="block aspect-video w-full object-cover object-center sm:absolute sm:inset-0 sm:aspect-auto sm:h-full"
         />
 
         <div className="absolute inset-0 hidden bg-black/5 sm:block" />

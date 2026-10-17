@@ -29,7 +29,7 @@ export function ProductCatalogSection() {
 
   return (
     <section className="bg-black py-20 text-white sm:py-24 lg:py-28">
-      <Container className="max-w-none px-8 sm:px-12 lg:px-16">
+      <Container className="max-w-none px-4 sm:px-12 lg:px-16">
         <div className="mb-8 flex items-end justify-between gap-6 sm:mb-10">
           <div>
             <h1 className="font-degular text-title tracking-wide sm:text-5xl lg:text-4xl sm:leading-none max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">

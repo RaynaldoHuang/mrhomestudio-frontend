@@ -20,7 +20,7 @@ export function BestSellersSection() {
 
   return (
     <section className="bg-black pt-20 text-white sm:pt-24 lg:pt-28">
-      <Container className="max-w-none px-8 sm:px-12 lg:px-16">
+      <Container className="max-w-none px-4 sm:px-12 lg:px-16">
         <div className="mb-8 flex items-center justify-between gap-6 sm:mb-10">
           <div>
             <h1 className="font-degular text-title sm:text-5xl lg:text-4xl sm:leading-none max-sm:font-degular max-sm:text-2xl max-sm:font-normal max-sm:leading-tight max-sm:tracking-normal">
@@ -37,13 +37,13 @@ export function BestSellersSection() {
           </Link>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 lg:gap-6">
+        <div className="grid gap-x-6 gap-y-12 md:grid-cols-2 lg:gap-x-8">
           {bestSellers.map((item) => (
             <article key={item.id} className="group flex min-w-0 flex-col">
               <Link
                 to={`/product/${item.id}`}
                 aria-label={`View ${item.name}`}
-                className="relative block aspect-4/5 overflow-hidden bg-neutral-100 sm:aspect-5/4 lg:aspect-[1.05/1]"
+                className="relative block aspect-square overflow-hidden bg-neutral-100"
               >
                 {item.thumbnail_url && <img
                   src={item.thumbnail_url}
