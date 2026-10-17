@@ -192,7 +192,7 @@ function CollectionContent({ id }: { id: string }) {
 
   return (
     <section className="min-h-screen bg-black py-16 text-white sm:py-20 lg:py-24">
-      <Container className="max-w-none px-8 sm:px-12 lg:px-16">
+      <Container className="max-w-none px-4 sm:px-12 lg:px-16">
         <Reveal as="header" onLoad className="mb-10 flex flex-col gap-8 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-degular text-title sm:text-4xl">{collectionTitle(id, megaMenus, activeCategory?.name)}</h1>
