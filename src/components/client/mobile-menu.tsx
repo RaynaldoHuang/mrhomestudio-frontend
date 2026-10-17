@@ -4,11 +4,13 @@ import { AnimatePresence, motion } from "motion/react"
 import { Link } from "react-router-dom"
 
 import { Container } from "@/components/client/container"
+import { menuDisplayGroups, type MenuDisplayMode } from "@/lib/menu-display"
 import type { MegaMenuGroup } from "@/lib/mega-menu-api"
 
 type MobileMenuItem = {
   label: string
   href: string
+  display_mode?: MenuDisplayMode
   groups?: MegaMenuGroup[]
 }
 
@@ -40,8 +42,11 @@ export function MobileMenu({ items, isOpen, onNavigate }: MobileMenuProps) {
 
   useEffect(() => {
     if (!isOpen) {
-      setActiveItem(null)
-      setCollapsedGroups([])
+      const timeout = window.setTimeout(() => {
+        setActiveItem(null)
+        setCollapsedGroups([])
+      }, 0)
+      return () => window.clearTimeout(timeout)
     }
   }, [isOpen])
 
@@ -99,7 +104,13 @@ export function MobileMenu({ items, isOpen, onNavigate }: MobileMenuProps) {
             </Link>
 
             <nav aria-label={`${activeItem.label} categories`} className="pb-8">
-              {activeItem.groups?.map((group) => {
+              {activeItem.display_mode === "direct" ? (
+                <ul className="divide-y divide-white/10">
+                  {menuDisplayGroups(activeItem.groups ?? [], "direct").flatMap((group) => group.links).map((link) => (
+                    <li key={link.href}><Link to={link.href} onClick={onNavigate} className="block py-4 font-degular text-xl text-white/75 hover:text-yellow-400">{link.label}</Link></li>
+                  ))}
+                </ul>
+              ) : activeItem.groups?.map((group) => {
                 const collapsed = collapsedGroups.includes(group.title)
                 return (
                   <section key={group.title} className="border-b border-white/10 py-1 last:border-b-0">

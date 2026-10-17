@@ -1,3 +1,4 @@
+import type { MenuDisplayMode } from "./menu-display"
 import { getAuthHeaders } from "@/lib/auth-api"
 
 export type MegaMenuLink = {
@@ -16,6 +17,7 @@ export type MegaMenu = {
   label: string
   href: string
   groups: MegaMenuGroup[]
+  display_mode: MenuDisplayMode
   featured_title: string | null
   featured_url: string | null
   featured_image_url: string | null
@@ -30,6 +32,7 @@ export type MegaMenuFormValues = {
   label: string
   href: string
   groups: MegaMenuGroup[]
+  display_mode: MenuDisplayMode
   featured_title: string
   featured_url: string
   featured_image_alt: string
@@ -60,6 +63,7 @@ async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
 
 function toFormData(values: MegaMenuFormValues): FormData {
   const data = new FormData()
+  data.append("display_mode", values.display_mode)
   data.append("label", values.label)
   data.append("href", values.href)
   data.append("featured_title", values.featured_title)

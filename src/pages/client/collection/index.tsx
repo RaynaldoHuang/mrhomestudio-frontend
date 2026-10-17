@@ -22,6 +22,7 @@ import {
 import { getPublicMegaMenus, type MegaMenu } from "@/lib/mega-menu-api"
 import { getProducts, type Product } from "@/lib/product-api"
 import { getCategories, type Category } from "@/lib/category-api"
+import { menuDisplayGroups } from "@/lib/menu-display"
 import { specificationLabel } from "@/lib/specification-label"
 import { collectionIdFromHref, collectionTitle } from "@/lib/collection-links"
 
@@ -173,10 +174,10 @@ function CollectionContent({ id }: { id: string }) {
     const groups: DynamicFilterGroup[] = []
     const usedLabels = new Set<string>()
 
-    activeMegaMenu?.groups.forEach((menuGroup, groupIndex) => {
+    menuDisplayGroups(activeMegaMenu?.groups ?? [], activeMegaMenu?.display_mode).forEach((menuGroup, groupIndex) => {
       const group: DynamicFilterGroup = {
-        key: `menu:${activeMegaMenu.id}:${groupIndex}`,
-        label: menuGroup.title.replace(/^by\s+/i, ""),
+        key: `menu:${activeMegaMenu?.id}:${groupIndex}`,
+        label: menuGroup.title.replace(/^by\s+/i, "") || "Category",
         source: "menu",
         options: menuGroup.links.filter((link) => link.category_id != null).map((link) => ({
           label: link.label,

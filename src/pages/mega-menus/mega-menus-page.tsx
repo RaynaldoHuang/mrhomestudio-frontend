@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { createMegaMenu, deleteMegaMenu, getAdminMegaMenus, updateMegaMenu, type MegaMenu, type MegaMenuFormValues } from "@/lib/mega-menu-api"
@@ -22,6 +23,7 @@ const emptyForm: MegaMenuFormValues = {
   label: "",
   href: "/collection/",
   groups: [emptyGroup()],
+  display_mode: "grouped",
   featured_title: "",
   featured_url: "",
   featured_image_alt: "",
@@ -35,6 +37,7 @@ function valuesFromMenu(menu: MegaMenu): MegaMenuFormValues {
     label: menu.label,
     href: menu.href,
     groups: menu.groups,
+    display_mode: menu.display_mode ?? "grouped",
     featured_title: menu.featured_title ?? "",
     featured_url: menu.featured_url ?? "",
     featured_image_alt: menu.featured_image_alt ?? "",
@@ -99,6 +102,29 @@ export function MegaMenusPage() {
     } : group),
   }))
 
+  const renderLink = (groupIndex: number, linkIndex: number) => {
+    const link = form.groups[groupIndex].links[linkIndex]
+    const totalLinks = form.groups.reduce((total, group) => total + group.links.length, 0)
+    return (
+      <div key={`${groupIndex}:${linkIndex}`} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_1.4fr_auto]">
+        <Input aria-label="Link label" required value={link.label} placeholder="Category label, e.g. Pre-amplifiers" onChange={(event) => updateLink(groupIndex, linkIndex, "label", event.target.value)} />
+        <Input aria-label="Link URL" required value={link.href} placeholder="/collection/pre-amplifiers" onChange={(event) => updateLink(groupIndex, linkIndex, "href", event.target.value)} />
+        <Button type="button" variant="ghost" size="icon" aria-label="Remove link" disabled={form.display_mode === "direct" ? totalLinks <= 1 : form.groups[groupIndex].links.length <= 1} onClick={() => setForm((current) => ({
+          ...current,
+          groups: current.groups.map((group, index) => index === groupIndex ? { ...group, links: group.links.filter((_, index) => index !== linkIndex) } : group).filter((group) => group.links.length > 0),
+        }))}><Trash2 className="size-4" /></Button>
+      </div>
+    )
+  }
+
+  const addDirectLink = () => setForm((current) => {
+    const groupIndex = current.groups.findIndex((group) => group.links.length < 12)
+    if (groupIndex < 0) {
+      return current.groups.length < 3 ? { ...current, groups: [...current.groups, emptyGroup()] } : current
+    }
+    return { ...current, groups: current.groups.map((group, index) => index === groupIndex ? { ...group, links: [...group.links, { label: "", href: "" }] } : group) }
+  })
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsSaving(true)
@@ -140,7 +166,7 @@ export function MegaMenusPage() {
             <TableBody>{menus.map((menu) => (
               <TableRow key={menu.id}>
                 <TableCell><p className="font-medium">{menu.label}</p><p className="text-xs text-muted-foreground">{menu.href}</p></TableCell>
-                <TableCell>{menu.groups.length} groups · {menu.groups.reduce((total, group) => total + group.links.length, 0)} links</TableCell>
+                <TableCell>{menu.display_mode === "direct" ? "Direct list" : `${menu.groups.length} groups`} · {menu.groups.reduce((total, group) => total + group.links.length, 0)} links</TableCell>
                 <TableCell><div className="flex min-w-52 items-center gap-3">{menu.featured_image_url ? <img src={menu.featured_image_url} alt="" className="h-12 w-20 rounded-md object-cover" /> : <div className="flex h-12 w-20 items-center justify-center rounded-md bg-muted"><Image className="size-4 text-muted-foreground" /></div>}<span className="line-clamp-2 text-sm">{menu.featured_title || "No promotion"}</span></div></TableCell>
                 <TableCell>{menu.sort_order}</TableCell>
                 <TableCell><Badge variant={menu.is_active ? "default" : "secondary"}>{menu.is_active ? "Active" : "Inactive"}</Badge></TableCell>
@@ -164,19 +190,27 @@ export function MegaMenusPage() {
               </section>
 
               <section className="space-y-4">
-                <div className="flex items-center justify-between"><div className="space-y-2"><h3 className="font-semibold">Link groups</h3><p className="text-sm text-muted-foreground">Category names follow collection link labels automatically. Add up to three groups.</p></div><Button type="button" size="sm" variant="outline" disabled={form.groups.length >= 3} onClick={() => setForm({ ...form, groups: [...form.groups, emptyGroup()] })}><Plus className="size-4" />Add Group</Button></div>
-                {form.groups.map((group, groupIndex) => (
+                <div className="space-y-2">
+                  <Label htmlFor="menu-display-mode">Menu display</Label>
+                  <Select value={form.display_mode} onValueChange={(value) => { if (value === "grouped" || value === "direct") setForm((current) => ({ ...current, display_mode: value })) }}>
+                    <SelectTrigger id="menu-display-mode"><SelectValue>{form.display_mode === "direct" ? "Daftar langsung" : "Berkelompok"}</SelectValue></SelectTrigger>
+                    <SelectContent><SelectItem value="grouped">Berkelompok</SelectItem><SelectItem value="direct">Daftar langsung</SelectItem></SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">{form.display_mode === "direct" ? "Show category links directly, e.g. Pre-amplifiers, Power amplifiers, Integrated amplifiers. Each link opens its product collection." : "Organize categories under headings, e.g. Digital Sources and Analogue Sources."}</p>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-2"><h3 className="font-semibold">{form.display_mode === "direct" ? "Category links" : "Link groups"}</h3><p className="text-sm text-muted-foreground">Category names follow collection link labels automatically.</p></div>
+                  {form.display_mode === "grouped" && <Button type="button" size="sm" variant="outline" disabled={form.groups.length >= 3} onClick={() => setForm({ ...form, groups: [...form.groups, emptyGroup()] })}><Plus className="size-4" />Add Group</Button>}
+                </div>
+                {form.display_mode === "direct" ? (
+                  <>
+                    <div className="space-y-2">{form.groups.flatMap((group, groupIndex) => group.links.map((_, linkIndex) => renderLink(groupIndex, linkIndex)))}</div>
+                    <Button type="button" size="sm" variant="outline" disabled={form.groups.reduce((total, group) => total + group.links.length, 0) >= 36} onClick={addDirectLink}><Plus className="size-4" />Add Link</Button>
+                  </>
+                ) : form.groups.map((group, groupIndex) => (
                   <div key={groupIndex} className="space-y-3 rounded-lg border p-4">
-                    <div className="flex gap-2"><Input required value={group.title} placeholder="Group title, e.g. By Type" onChange={(event) => updateGroup(groupIndex, event.target.value)} /><Button type="button" variant="ghost" size="icon" disabled={form.groups.length === 1} onClick={() => setForm({ ...form, groups: form.groups.filter((_, index) => index !== groupIndex) })}><Trash2 className="size-4" /></Button></div>
-                    <div className="space-y-2">{group.links.map((link, linkIndex) => (
-                      <div key={linkIndex} className="space-y-2 rounded-lg border p-3">
-                        <div className="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto]">
-                          <Input aria-label="Link label" required value={link.label} placeholder="Link label" onChange={(event) => updateLink(groupIndex, linkIndex, "label", event.target.value)} />
-                          <Input aria-label="Link URL" required value={link.href} placeholder="/collection/cd-players" onChange={(event) => updateLink(groupIndex, linkIndex, "href", event.target.value)} />
-                          <Button type="button" variant="ghost" size="icon" aria-label="Remove link" disabled={group.links.length === 1} onClick={() => setForm((current) => ({ ...current, groups: current.groups.map((item, index) => index === groupIndex ? { ...item, links: item.links.filter((_, index) => index !== linkIndex) } : item) }))}><Trash2 className="size-4" /></Button>
-                        </div>
-                      </div>
-                    ))}</div>
+                    <div className="flex gap-2"><Input aria-label="Group title" required value={group.title} placeholder="Group title, e.g. Digital Sources" onChange={(event) => updateGroup(groupIndex, event.target.value)} /><Button type="button" variant="ghost" size="icon" aria-label="Remove group" disabled={form.groups.length === 1} onClick={() => setForm({ ...form, groups: form.groups.filter((_, index) => index !== groupIndex) })}><Trash2 className="size-4" /></Button></div>
+                    <div className="space-y-2">{group.links.map((_, linkIndex) => renderLink(groupIndex, linkIndex))}</div>
                     <Button type="button" size="sm" variant="outline" disabled={group.links.length >= 12} onClick={() => setForm((current) => ({ ...current, groups: current.groups.map((item, index) => index === groupIndex ? { ...item, links: [...item.links, { label: "", href: "" }] } : item) }))}><Plus className="size-4" />Add Link</Button>
                   </div>
                 ))}
