@@ -17,7 +17,7 @@ export function ProductFeatureSection() {
         <div className="absolute inset-0 hidden bg-black/5 sm:block" />
         <div className="absolute inset-0 hidden bg-linear-to-r from-black/60 via-black/20 to-transparent sm:block" />
 
-        <div className="relative z-10 flex items-center px-8 pt-6 pb-10 sm:min-h-136 sm:px-12 sm:py-12 lg:min-h-152 lg:px-16 lg:py-14">
+        <div className="relative z-10 flex items-center px-4 pt-6 pb-10 sm:min-h-136 sm:px-12 sm:py-12 lg:min-h-152 lg:px-16 lg:py-14">
           <div className="max-w-2xl">
             <p className="font-neue-haas mb-4 text-xs text-yellow-400 sm:text-sm">
               High-fidelity speakers
