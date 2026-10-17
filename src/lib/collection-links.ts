@@ -27,12 +27,19 @@ export function collectionIdFromHref(href: string) {
   }
 }
 
+export function viewAllHref(href: string, label: string) {
+  const target = href.trim()
+  return /^\/collection\/?(?:[?#].*)?$/.test(target)
+    ? collectionHref(label) || "/collection/all-products"
+    : target
+}
+
 export function collectionTitle(id: string, menus: CollectionMenu[], categoryName?: string) {
   const link = menus.flatMap((menu) => menu.groups.flatMap((group) => group.links))
     .find((link) => collectionIdFromHref(link.href) === id)
   if (link?.label.trim()) return link.label
 
-  const menu = menus.find((menu) => collectionIdFromHref(menu.href) === id)
+  const menu = menus.find((menu) => collectionIdFromHref(viewAllHref(menu.href, menu.label)) === id)
   if (menu?.label.trim()) return menu.label
 
   return categoryName ?? id.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())

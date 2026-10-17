@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { collectionHref, collectionIdFromHref, collectionTitle } from "../src/lib/collection-links.ts"
+import { collectionHref, collectionIdFromHref, collectionTitle, viewAllHref } from "../src/lib/collection-links.ts"
 
 test("collection URLs normalize spaces and capital letters, including legacy encoded URLs", () => {
   assert.equal(collectionHref("CD Players"), "/collection/cd-players")
@@ -18,4 +18,23 @@ test("menu labels remain independent from the canonical category URL", () => {
   assert.equal(collectionTitle("cd-players", menus, "CD Players"), "Our CD Players")
   assert.equal(collectionTitle("sources", menus), "Sources")
   assert.equal(collectionTitle("turntables", menus, "Turntables"), "Turntables")
+})
+
+test("incomplete View All collection links derive their destination from the menu label", () => {
+  assert.equal(viewAllHref("/collection/", "Source"), "/collection/source")
+  assert.equal(viewAllHref("/collection", "Amplifiers"), "/collection/amplifiers")
+  assert.equal(viewAllHref(" /collection/?page=1 ", "Speaker"), "/collection/speaker")
+  assert.equal(viewAllHref("/collection/", "Accessories"), "/collection/accessories")
+  assert.equal(viewAllHref("/collection/", ""), "/collection/all-products")
+})
+
+test("View All preserves configured collection URLs and other destinations", () => {
+  assert.equal(viewAllHref("/collection/sources?sort=latest", "Source"), "/collection/sources?sort=latest")
+  assert.equal(viewAllHref("/collection/all-products", "Source"), "/collection/all-products")
+  assert.equal(viewAllHref("/about", "About"), "/about")
+})
+
+test("a repaired View All URL keeps the saved parent menu title", () => {
+  const menus = [{ label: "Source", href: "/collection/", groups: [] }]
+  assert.equal(collectionTitle("source", menus), "Source")
 })

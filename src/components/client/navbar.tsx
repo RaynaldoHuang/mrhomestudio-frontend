@@ -9,6 +9,7 @@ import { MobileMenu } from "@/components/client/mobile-menu"
 import { CartDrawer } from "@/components/client/cart-drawer"
 import { SearchOverlay } from "@/components/client/search-overlay"
 import { useCart } from "@/contexts/cart-context"
+import { viewAllHref } from "@/lib/collection-links"
 import { menuDisplayGroups, type MenuDisplayMode } from "@/lib/menu-display"
 import { getPublicMegaMenus, type MegaMenuGroup } from "@/lib/mega-menu-api"
 
@@ -65,14 +66,14 @@ export function Navbar() {
         setNavigation(menus.map((menu) => {
           return {
             label: menu.label,
-            href: menu.href,
+            href: viewAllHref(menu.href, menu.label),
             display_mode: menu.display_mode ?? "grouped",
             groups: menuDisplayGroups(menu.groups, menu.display_mode),
             featured: {
               title: menu.featured_title ?? menu.label,
               image: menu.featured_image_url ?? null,
               imageAlt: menu.featured_image_alt ?? menu.featured_title ?? menu.label,
-              url: menu.featured_url ?? menu.href,
+              url: menu.featured_url ?? viewAllHref(menu.href, menu.label),
             },
           }
         }))

@@ -6,6 +6,7 @@ import { Link } from "react-router-dom"
 import { Container } from "@/components/client/container"
 import { menuDisplayGroups, type MenuDisplayMode } from "@/lib/menu-display"
 import type { MegaMenuGroup } from "@/lib/mega-menu-api"
+import { viewAllHref } from "@/lib/collection-links"
 
 type MobileMenuItem = {
   label: string
@@ -96,7 +97,7 @@ export function MobileMenu({ items, isOpen, onNavigate }: MobileMenuProps) {
             </div>
 
             <Link
-              to={activeItem.href}
+              to={viewAllHref(activeItem.href, activeItem.label)}
               onClick={onNavigate}
               className="py-4 text-base font-medium text-yellow-400 transition-colors hover:text-yellow-300"
             >
