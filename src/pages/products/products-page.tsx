@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react"
-import { Image, Loader2, Package, Pencil, Plus, Trash2, X } from "lucide-react"
+import { Copy, Image, Loader2, Package, Pencil, Plus, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 import { Link } from "react-router-dom"
 
@@ -25,6 +25,7 @@ import { getAdminBrands, type Brand } from "@/lib/brand-api"
 import {
   createProduct,
   deleteProduct,
+  duplicateProduct,
   getAdminProducts,
   updateProduct,
   type Product,
@@ -82,6 +83,7 @@ export function ProductsPage() {
   const [priceInput, setPriceInput] = useState("0")
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [duplicatingId, setDuplicatingId] = useState<number | null>(null)
 
   const loadProducts = useCallback(async () => {
     setIsLoading(true)
@@ -181,6 +183,21 @@ export function ProductsPage() {
     }
   }
 
+  const handleDuplicate = async (product: Product) => {
+    if (duplicatingId !== null) return
+    setDuplicatingId(product.id)
+    try {
+      const duplicate = await duplicateProduct(product.id)
+      setProducts((current) => [duplicate, ...current])
+      openEditDialog(duplicate)
+      toast.success("Produk berhasil diduplikat. Edit salinan lalu aktifkan jika sudah siap.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Tidak dapat menduplikat produk.")
+    } finally {
+      setDuplicatingId(null)
+    }
+  }
+
   const handleDelete = async () => {
     if (!deleteTarget) return
     setIsDeleting(true)
@@ -217,7 +234,7 @@ export function ProductsPage() {
                   <TableCell>{product.brand || "—"}</TableCell>
                   <TableCell>{formatPrice(product.price)}</TableCell>
                   <TableCell><div className="flex flex-wrap gap-1"><Badge variant={product.is_active ? "default" : "secondary"}>{product.is_active ? "Active" : "Inactive"}</Badge>{product.show_on_home && <Badge variant="outline">Homepage</Badge>}</div></TableCell>
-                  <TableCell><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" aria-label={`Edit ${product.name}`} onClick={() => openEditDialog(product)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" aria-label={`Delete ${product.name}`} onClick={() => setDeleteTarget(product)}><Trash2 className="size-4 text-destructive" /></Button></div></TableCell>
+                  <TableCell><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" aria-label={`Edit ${product.name}`} onClick={() => openEditDialog(product)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" title="Duplikat produk" aria-label={`Duplikat ${product.name}`} disabled={duplicatingId !== null} onClick={() => void handleDuplicate(product)}>{duplicatingId === product.id ? <Loader2 className="size-4 animate-spin" /> : <Copy className="size-4" />}</Button><Button variant="ghost" size="icon" aria-label={`Delete ${product.name}`} disabled={duplicatingId === product.id} onClick={() => setDeleteTarget(product)}><Trash2 className="size-4 text-destructive" /></Button></div></TableCell>
                 </TableRow>
               ))}
             </TableBody>

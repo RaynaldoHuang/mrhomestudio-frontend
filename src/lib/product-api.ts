@@ -168,4 +168,9 @@ export async function updateProduct(id: number, values: ProductFormValues): Prom
 export function deleteProduct(id: number): Promise<void> {
   return apiRequest<void>(`/admin/products/${id}`, { method: "DELETE" })
 }
+
+export async function duplicateProduct(id: number): Promise<Product> {
+  const response = await apiRequest<ApiResponse<Product>>(`/admin/products/${id}/duplicate`, { method: "POST" })
+  return response.data
+}
 import { getAuthHeaders } from "@/lib/auth-api"
