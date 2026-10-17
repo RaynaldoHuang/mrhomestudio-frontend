@@ -6,18 +6,18 @@ import featureImage from "@/assets/img/img4.png"
 export function ProductFeatureSection() {
   return (
     <section className="bg-black pt-20 text-white sm:pt-24 lg:pt-28">
-      <div className="relative min-h-120 w-full overflow-hidden sm:min-h-136 lg:min-h-152">
+      <div className="relative w-full overflow-hidden sm:min-h-136 lg:min-h-152">
         <img
           src={featureImage}
           alt="Premium speakers integrated into a modern living space"
           loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className="block h-auto w-full object-cover object-center sm:absolute sm:inset-0 sm:h-full"
         />
 
-        <div className="absolute inset-0 bg-black/5" />
-        <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/20 to-transparent" />
+        <div className="absolute inset-0 hidden bg-black/5 sm:block" />
+        <div className="absolute inset-0 hidden bg-linear-to-r from-black/60 via-black/20 to-transparent sm:block" />
 
-        <div className="relative z-10 flex min-h-120 items-center px-8 py-10 sm:min-h-136 sm:px-12 sm:py-12 lg:min-h-152 lg:px-16 lg:py-14">
+        <div className="relative z-10 flex items-center px-8 pt-6 pb-10 sm:min-h-136 sm:px-12 sm:py-12 lg:min-h-152 lg:px-16 lg:py-14">
           <div className="max-w-2xl">
             <p className="font-neue-haas mb-4 text-xs text-yellow-400 sm:text-sm">
               High-fidelity speakers
