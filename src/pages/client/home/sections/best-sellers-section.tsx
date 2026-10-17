@@ -54,7 +54,7 @@ export function BestSellersSection() {
               </Link>
 
               <div className="flex min-w-0 flex-1 flex-col items-start pt-5 sm:pt-6">
-                <h2 title={item.name} className="w-full font-degular text-2xl font-normal leading-tight tracking-normal max-sm:truncate sm:text-4xl">
+                <h2 title={item.name} className="w-full font-degular text-lg font-normal leading-tight tracking-normal max-sm:truncate sm:text-2xl">
                   {item.name}
                 </h2>
                 <p className="font-neue-haas mt-3 mb-6 line-clamp-2 min-h-12 text-sm leading-6 text-white/60 sm:text-base">
