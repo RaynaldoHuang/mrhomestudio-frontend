@@ -7,6 +7,8 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { EmptyState } from "@/components/shared/empty-state"
 import { ErrorState } from "@/components/shared/error-state"
 import { LoadingState } from "@/components/shared/loading-state"
+import { ListPagination } from "@/components/shared/list-pagination"
+import { ADMIN_PAGE_SIZE, paginate } from "@/lib/pagination"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -80,6 +82,7 @@ export function ProductsPage() {
   function setFilter(key: string, value: string) {
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
+      next.delete("page")
       if (value === "all" || value === "") next.delete(key)
       else next.set(key, value)
       return next
@@ -89,7 +92,7 @@ export function ProductsPage() {
   function resetFilters() {
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
-      for (const key of ["q", "brand", "category"]) next.delete(key)
+      for (const key of ["q", "brand", "category", "page"]) next.delete(key)
       return next
     }, { replace: true })
   }
@@ -237,6 +240,13 @@ export function ProductsPage() {
   }
 
   const visibleProducts = filterAdminProducts(products, search, brandFilter, categoryFilter)
+  const pagination = paginate(visibleProducts, searchParams.get("page"), ADMIN_PAGE_SIZE)
+  const changePage = (page: number) => setSearchParams((current) => {
+    const next = new URLSearchParams(current)
+    if (page === 1) next.delete("page")
+    else next.set("page", String(page))
+    return next
+  })
   const brandOptions = adminProductFilterOptions(products, "brand", brands)
   const categoryOptions = adminProductFilterOptions(products, "category", categories)
   const hasFilters = search !== "" || brandFilter !== "all" || categoryFilter !== "all"
@@ -255,7 +265,7 @@ export function ProductsPage() {
           <div className="grid min-w-0 grid-rows-[1rem_2.25rem] gap-2"><Label htmlFor="admin-product-category-filter">Kategori</Label><div className="relative h-9 min-w-0"><Select value={categoryFilter} onValueChange={(value) => setFilter("category", value ?? "all")}><SelectTrigger id="admin-product-category-filter" className="min-w-0 data-[size=default]:h-9"><SelectValue>{categoryFilter === "all" ? "Semua kategori" : categoryFilter === "none" ? "Tanpa kategori" : categoryOptions.find((option) => option.value === categoryFilter)?.label ?? "Kategori tidak tersedia"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="all">Semua kategori</SelectItem><SelectItem value="none">Tanpa kategori</SelectItem>{categoryOptions.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select></div></div>
           <Button variant="outline" className="h-9 sm:col-span-2 sm:justify-self-end lg:col-span-1" disabled={!hasFilters} onClick={resetFilters}><X className="size-4" /> Reset</Button>
         </div>
-        <p role="status" className="text-sm text-muted-foreground">Menampilkan {visibleProducts.length} dari {products.length} produk</p>
+        <p role="status" className="text-sm text-muted-foreground">Ditemukan {visibleProducts.length} dari {products.length} produk</p>
       </div>}
 
       {products.length === 0 ? (
@@ -265,7 +275,7 @@ export function ProductsPage() {
           <Table>
             <TableHeader><TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Brand</TableHead><TableHead>Price</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
             <TableBody>
-              {visibleProducts.map((product) => (
+              {pagination.items.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell><div className="flex min-w-56 items-center gap-3">{product.thumbnail_url ? <img src={product.thumbnail_url} alt="" className="size-14 rounded-lg object-cover" /> : <div className="flex size-14 items-center justify-center rounded-lg bg-muted"><Image className="size-5 text-muted-foreground" /></div>}<div><p className="font-medium">{product.name}</p><p className="text-xs text-muted-foreground">{product.images.length} image(s)</p></div></div></TableCell>
                   <TableCell>{product.category || "—"}</TableCell>
@@ -280,6 +290,8 @@ export function ProductsPage() {
           </Table>
         </div>
       )}
+
+      {products.length > 0 && <ListPagination {...pagination} total={visibleProducts.length} pageSize={ADMIN_PAGE_SIZE} label="produk" onPageChange={changePage} />}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">

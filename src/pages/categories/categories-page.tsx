@@ -6,6 +6,8 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { EmptyState } from "@/components/shared/empty-state"
 import { ErrorState } from "@/components/shared/error-state"
 import { LoadingState } from "@/components/shared/loading-state"
+import { ListPagination } from "@/components/shared/list-pagination"
+import { ADMIN_PAGE_SIZE, paginate } from "@/lib/pagination"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -24,6 +26,7 @@ const emptyForm: CategoryFormValues = {
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
+  const [page, setPage] = useState(1)
   const [selectedGroup, setSelectedGroup] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -99,6 +102,7 @@ export function CategoriesPage() {
     groupFilter === "all"
     || category.menu_groups.includes(groupFilter.slice(6))
   ))
+  const pagination = paginate(filteredCategories, page, ADMIN_PAGE_SIZE)
   const groupLabel = groupFilter === "all" ? "All groups" : groupFilter.slice(6)
   const cover = preview?.file === form.image ? preview?.url : editing?.image_url
 
@@ -109,7 +113,7 @@ export function CategoriesPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="w-full space-y-2 sm:max-w-sm">
             <Label htmlFor="category-group-filter">Menu / Group</Label>
-            <Select value={groupFilter} onValueChange={(value) => setSelectedGroup(value ?? "all")}>
+            <Select value={groupFilter} onValueChange={(value) => { setPage(1); setSelectedGroup(value ?? "all") }}>
               <SelectTrigger id="category-group-filter"><SelectValue>{groupLabel}</SelectValue></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All groups</SelectItem>
@@ -124,7 +128,7 @@ export function CategoriesPage() {
         <div className="overflow-hidden rounded-xl border bg-card">
           <Table>
             <TableHeader><TableRow><TableHead>Category</TableHead><TableHead>Menu / Group</TableHead><TableHead>Products</TableHead><TableHead>Order</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-            <TableBody>{filteredCategories.map((category) => (
+            <TableBody>{pagination.items.map((category) => (
               <TableRow key={category.id}>
                 <TableCell><div className="flex items-center gap-3">{category.image_url ? <img src={category.image_url} alt="" className="size-14 rounded-lg object-cover" /> : <div className="flex size-14 items-center justify-center rounded-lg bg-muted"><Image className="size-5" /></div>}<div><p className="font-medium">{category.name}</p><p className="text-xs text-muted-foreground">/collection/{category.slug}</p></div></div></TableCell>
                 <TableCell><div className="space-y-1">{category.menu_groups.length ? category.menu_groups.map((group) => <p key={group} className="text-sm">{group}</p>) : <span className="text-sm text-muted-foreground">Not linked to a menu</span>}</div></TableCell>
@@ -137,6 +141,7 @@ export function CategoriesPage() {
           </Table>
         </div>
       )}
+      {categories.length > 0 && <ListPagination {...pagination} total={filteredCategories.length} pageSize={ADMIN_PAGE_SIZE} label="kategori" onPageChange={setPage} />}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <form onSubmit={handleSubmit} className="contents">

@@ -48,6 +48,7 @@ function SearchContent({ onClose }: Pick<SearchOverlayProps, "onClose">) {
   const isPresent = useIsPresent()
   const reduceMotion = useReducedMotion()
   const [query, setQuery] = useState("")
+  const [settledQuery, setSettledQuery] = useState("")
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -62,6 +63,14 @@ function SearchContent({ onClose }: Pick<SearchOverlayProps, "onClose">) {
     return () => { active = false }
   }, [attempt])
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setSettledQuery(query), 300)
+    return () => window.clearTimeout(timeout)
+  }, [query])
+
+  const isSearching = query !== settledQuery
+  const isBusy = isLoading || (isSearching && !loadError)
+
   const retry = () => {
     setIsLoading(true)
     setLoadError(false)
@@ -69,13 +78,13 @@ function SearchContent({ onClose }: Pick<SearchOverlayProps, "onClose">) {
   }
 
   const results = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
+    const normalizedQuery = settledQuery.trim().toLowerCase()
     if (!normalizedQuery) return products.slice(0, 4)
 
     return products.filter((product) =>
       `${product.name} ${product.category ?? ""}`.toLowerCase().includes(normalizedQuery),
     )
-  }, [products, query])
+  }, [products, settledQuery])
 
   return (
     <motion.div
@@ -117,7 +126,7 @@ function SearchContent({ onClose }: Pick<SearchOverlayProps, "onClose">) {
                 aria-label="Search products"
                 className="h-12 min-w-0 flex-1 bg-transparent px-4 text-sm text-white outline-none placeholder:text-white/35 sm:h-14 sm:px-5"
               />
-              <Search className="mr-4 size-4 shrink-0 text-white/55" strokeWidth={1.5} />
+              {isBusy ? <Loader2 className="mr-4 size-4 shrink-0 text-yellow-400 motion-safe:animate-spin" aria-hidden="true" /> : <Search className="mr-4 size-4 shrink-0 text-white/55" strokeWidth={1.5} />}
             </div>
 
             <button
@@ -135,10 +144,11 @@ function SearchContent({ onClose }: Pick<SearchOverlayProps, "onClose">) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.3, delay: reduceMotion ? 0 : 0.12, ease: "easeOut" }}
             className="mt-10 sm:mt-12"
+            aria-busy={isBusy}
           >
             <div className="mb-7 flex items-center justify-between gap-5">
               <p className="text-xs uppercase tracking-[0.18em] text-white/50">
-                {query.trim() ? (isLoading || loadError ? "Search results" : `Search results (${results.length})`) : "Latest products"}
+                {query.trim() ? (isBusy || loadError ? "Search results" : `Search results (${results.length})`) : "Latest products"}
               </p>
               {query && (
                 <button type="button" onClick={() => setQuery("")} className="cursor-pointer text-xs text-white/45 hover:text-yellow-400">
@@ -147,56 +157,63 @@ function SearchContent({ onClose }: Pick<SearchOverlayProps, "onClose">) {
               )}
             </div>
 
-            {isLoading ? (
-              <div role="status" className="flex items-center justify-center gap-3 py-16 text-sm text-white/50 sm:py-20">
-                <Loader2 className="size-5 animate-spin text-yellow-400" aria-hidden="true" />
-                Loading products…
-              </div>
-            ) : loadError ? (
-              <div role="alert" className="border-y border-white/15 py-16 text-center sm:py-20">
-                <p className="text-base">Unable to load products</p>
-                <p className="mt-2 text-sm text-white/45">Please try again in a moment.</p>
-                <button type="button" onClick={retry} className="mt-6 cursor-pointer rounded-full border border-yellow-400 px-5 py-2 text-sm text-yellow-400 transition-colors hover:bg-yellow-400 hover:text-black">
-                  Try again
-                </button>
-              </div>
-            ) : results.length > 0 ? (
-              <div className="grid grid-cols-2 gap-x-2 gap-y-8 md:grid-cols-4 lg:gap-x-4">
-                {results.map((product) => (
-                  <Link key={product.id} to={`/product/${product.id}`} onClick={onClose} className="group min-w-0">
-                    <div className="aspect-square overflow-hidden bg-white">
-                      {product.thumbnail_url ? (
-                        <img src={product.thumbnail_url} alt={product.name} loading="lazy" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-neutral-200"><PackageOpen className="size-10 text-neutral-400" aria-hidden="true" /></div>
-                      )}
-                    </div>
-                    <div className="pt-3">
-                      <h2 className="truncate text-sm font-medium transition-colors group-hover:text-yellow-400 sm:text-base">{product.name}</h2>
-                      <p className="mt-1 truncate text-xs text-white/45">{product.category}</p>
-                      <p className="mt-3 text-sm">{formatPrice(product.price)}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div role="status" className="flex min-h-72 flex-col items-center justify-center gap-6 border-y border-dashed border-white/20 px-6 py-12 text-center">
-                <div className="flex size-12 items-center justify-center rounded-full bg-white/10">
-                  {products.length === 0 ? <PackageOpen className="size-6 text-yellow-400" aria-hidden="true" /> : <Search className="size-6 text-yellow-400" aria-hidden="true" />}
+            <motion.div
+              key={isBusy ? "loading" : loadError ? "error" : settledQuery}
+              initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
+            >
+              {isBusy ? (
+                <div role="status" className="flex min-h-72 items-center justify-center gap-3 py-16 text-sm text-white/50 sm:py-20">
+                  <Loader2 className="size-5 motion-safe:animate-spin text-yellow-400" aria-hidden="true" />
+                  {isLoading ? "Loading products…" : "Searching products…"}
                 </div>
-                <div>
-                  <h2 className="font-degular text-title sm:text-3xl sm:leading-none">{products.length === 0 ? "No products yet" : "No products found"}</h2>
-                  <p className="mt-3 max-w-md text-sm leading-6 text-white/50">
-                    {products.length === 0 ? "Our latest audio collection is being prepared. Please check back soon." : <>No results for “{query.trim()}”. Try another product name or category.</>}
-                  </p>
-                </div>
-                {products.length > 0 && (
-                  <button type="button" onClick={() => setQuery("")} className="cursor-pointer rounded-full border border-yellow-400 px-5 py-2 text-sm text-yellow-400 transition-colors hover:bg-yellow-400 hover:text-black">
-                    Clear search
+              ) : loadError ? (
+                <div role="alert" className="border-y border-white/15 py-16 text-center sm:py-20">
+                  <p className="text-base">Unable to load products</p>
+                  <p className="mt-2 text-sm text-white/45">Please try again in a moment.</p>
+                  <button type="button" onClick={retry} className="mt-6 cursor-pointer rounded-full border border-yellow-400 px-5 py-2 text-sm text-yellow-400 transition-colors hover:bg-yellow-400 hover:text-black">
+                    Try again
                   </button>
-                )}
-              </div>
-            )}
+                </div>
+              ) : results.length > 0 ? (
+                <div className="grid grid-cols-2 gap-x-2 gap-y-8 md:grid-cols-4 lg:gap-x-4">
+                  {results.map((product) => (
+                    <Link key={product.id} to={`/product/${product.id}`} onClick={onClose} className="group min-w-0">
+                      <div className="aspect-square overflow-hidden bg-white">
+                        {product.thumbnail_url ? (
+                          <img src={product.thumbnail_url} alt={product.name} loading="lazy" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center bg-neutral-200"><PackageOpen className="size-10 text-neutral-400" aria-hidden="true" /></div>
+                        )}
+                      </div>
+                      <div className="pt-3">
+                        <h2 className="truncate text-sm font-medium transition-colors group-hover:text-yellow-400 sm:text-base">{product.name}</h2>
+                        <p className="mt-1 truncate text-xs text-white/45">{product.category}</p>
+                        <p className="mt-3 text-sm">{formatPrice(product.price)}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div role="status" className="flex min-h-72 flex-col items-center justify-center gap-6 border-y border-dashed border-white/20 px-6 py-12 text-center">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-white/10">
+                    {products.length === 0 ? <PackageOpen className="size-6 text-yellow-400" aria-hidden="true" /> : <Search className="size-6 text-yellow-400" aria-hidden="true" />}
+                  </div>
+                  <div>
+                    <h2 className="font-degular text-title sm:text-3xl sm:leading-none">{products.length === 0 ? "No products yet" : "No products found"}</h2>
+                    <p className="mt-3 max-w-md text-sm leading-6 text-white/50">
+                      {products.length === 0 ? "Our latest audio collection is being prepared. Please check back soon." : <>No results for “{query.trim()}”. Try another product name or category.</>}
+                    </p>
+                  </div>
+                  {products.length > 0 && (
+                    <button type="button" onClick={() => setQuery("")} className="cursor-pointer rounded-full border border-yellow-400 px-5 py-2 text-sm text-yellow-400 transition-colors hover:bg-yellow-400 hover:text-black">
+                      Clear search
+                    </button>
+                  )}
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         </div>
       </motion.section>

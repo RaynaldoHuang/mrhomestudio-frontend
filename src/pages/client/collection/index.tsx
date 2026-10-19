@@ -26,7 +26,7 @@ import { catalogFilterGroups, emptyCatalogFilters, filterCatalogProducts, type C
 import { formatRupiahInput } from "@/lib/rupiah-input"
 import { collectionIdFromHref, collectionTitle } from "@/lib/collection-links"
 
-const productsPerPage = 16
+import { CATALOG_PAGE_SIZE as productsPerPage, paginate, paginationPages } from "@/lib/pagination"
 
 function FilterSection({
   title,
@@ -183,10 +183,14 @@ function CollectionContent({ id }: { id: string }) {
     })
   }
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / productsPerPage))
-  const requestedPage = Number(searchParams.get("page")) || 1
-  const currentPage = Math.min(Math.max(requestedPage, 1), totalPages)
-  const visibleProducts = filteredProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
+  const { page: currentPage, totalPages, items: visibleProducts, start, end } = paginate(filteredProducts, searchParams.get("page"), productsPerPage)
+
+  function pageHref(page: number) {
+    const next = new URLSearchParams(searchParams)
+    if (page === 1) next.delete("page")
+    else next.set("page", String(page))
+    return { pathname: `/collection/${id}`, search: next.toString() ? `?${next}` : "" }
+  }
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }) }, [currentPage, id])
 
@@ -196,7 +200,7 @@ function CollectionContent({ id }: { id: string }) {
         <Reveal as="header" onLoad className="mb-10 flex flex-col gap-8 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-degular text-title sm:text-4xl">{collectionTitle(id, megaMenus, activeCategory?.name)}</h1>
-            <p className="mt-2 text-sm text-white/60">{filteredProducts.length} items</p>
+            <p className="mt-2 text-sm text-white/60">Showing {start}–{end} of {filteredProducts.length} products · {productsPerPage} per page</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-5">
@@ -366,10 +370,10 @@ function CollectionContent({ id }: { id: string }) {
           </div>
         )}
 
-        {totalPages > 1 && <nav aria-label="Product pagination" className="mt-16 flex items-center justify-center gap-2 border-t border-white/15 pt-10">
-          <Link to={`/collection/${id}?page=${Math.max(currentPage - 1, 1)}`} aria-disabled={currentPage === 1} className={`flex size-10 items-center justify-center rounded-full border ${currentPage === 1 ? "pointer-events-none border-white/15 text-white/25" : "border-white/50 hover:bg-yellow-500 hover:text-black"}`}><ChevronLeft className="size-4" /></Link>
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => <Link key={page} to={`/collection/${id}?page=${page}`} className={`flex size-10 items-center justify-center rounded-full border text-sm ${page === currentPage ? "border-yellow-500 bg-yellow-500 text-black" : "border-white/30"}`}>{page}</Link>)}
-          <Link to={`/collection/${id}?page=${Math.min(currentPage + 1, totalPages)}`} aria-disabled={currentPage === totalPages} className={`flex size-10 items-center justify-center rounded-full border ${currentPage === totalPages ? "pointer-events-none border-white/15 text-white/25" : "border-white/50 hover:bg-yellow-500 hover:text-black"}`}><ChevronRight className="size-4" /></Link>
+        {totalPages > 1 && <nav aria-label="Product pagination" className="mt-16 flex flex-wrap items-center justify-center gap-2 border-t border-white/15 pt-10">
+          <Link to={pageHref(Math.max(currentPage - 1, 1))} aria-label="Previous page" tabIndex={currentPage === 1 ? -1 : undefined} aria-disabled={currentPage === 1} className={`flex size-10 items-center justify-center rounded-full border ${currentPage === 1 ? "pointer-events-none border-white/15 text-white/25" : "border-white/50 hover:bg-yellow-500 hover:text-black"}`}><ChevronLeft className="size-4" /></Link>
+          {paginationPages(currentPage, totalPages).map((page, index) => page === "ellipsis" ? <span key={`ellipsis-${index}`} aria-hidden="true">…</span> : <Link key={page} to={pageHref(page)} aria-label={`Page ${page}`} aria-current={page === currentPage ? "page" : undefined} className={`flex size-10 items-center justify-center rounded-full border text-sm ${page === currentPage ? "border-yellow-500 bg-yellow-500 text-black" : "border-white/30"}`}>{page}</Link>)}
+          <Link to={pageHref(Math.min(currentPage + 1, totalPages))} aria-label="Next page" tabIndex={currentPage === totalPages ? -1 : undefined} aria-disabled={currentPage === totalPages} className={`flex size-10 items-center justify-center rounded-full border ${currentPage === totalPages ? "pointer-events-none border-white/15 text-white/25" : "border-white/50 hover:bg-yellow-500 hover:text-black"}`}><ChevronRight className="size-4" /></Link>
         </nav>}
       </Container>
     </section>
