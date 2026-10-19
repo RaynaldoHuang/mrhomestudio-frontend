@@ -38,8 +38,8 @@ export function BestSellersSection() {
         </div>
 
         <div className="grid grid-cols-1 gap-x-1 gap-y-10 md:grid-cols-2 md:gap-x-1.5 lg:grid-cols-3 lg:gap-x-2 lg:gap-y-12">
-          {bestSellers.map((item) => (
-            <article key={item.id} className="group flex min-w-0 flex-col">
+          {bestSellers.map((item, index) => (
+            <article key={item.id} className={`group flex min-w-0 flex-col ${index >= 2 ? "max-md:hidden" : ""}`}>
               <Link
                 to={`/product/${item.id}`}
                 aria-label={`View ${item.name}`}
