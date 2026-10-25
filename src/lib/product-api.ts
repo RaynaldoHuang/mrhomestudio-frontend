@@ -1,3 +1,5 @@
+import { toProductFormData } from "@/lib/product-form-data"
+
 export type ProductImage = {
   id: number
   url: string
@@ -83,34 +85,6 @@ async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json()
 }
 
-function toFormData(values: ProductFormValues): FormData {
-  const formData = new FormData()
-
-  formData.append("name", values.name)
-  formData.append("category", values.category)
-  formData.append("category_id", values.category_id === null ? "" : String(values.category_id))
-  formData.append("brand_id", values.brand_id === null ? "" : String(values.brand_id))
-  formData.append("price", String(values.price))
-  formData.append("description", values.description)
-  formData.append("is_active", values.is_active ? "1" : "0")
-  formData.append("show_on_home", values.show_on_home ? "1" : "0")
-
-  values.specifications.forEach((specification, index) => {
-    formData.append(`specifications[${index}][name]`, specification.name)
-    formData.append(`specifications[${index}][value]`, specification.value)
-  })
-  values.variants.forEach((variant, variantIndex) => {
-    formData.append(`variants[${variantIndex}][name]`, variant.name)
-    variant.values.forEach((value, valueIndex) => {
-      formData.append(`variants[${variantIndex}][values][${valueIndex}]`, value)
-    })
-  })
-  values.images.forEach((image) => formData.append("images[]", image))
-  values.remove_image_ids.forEach((id) => formData.append("remove_image_ids[]", String(id)))
-
-  return formData
-}
-
 export async function getProducts(limit?: number, categoryId?: number, collection?: string): Promise<Product[]> {
   const params = new URLSearchParams()
   if (limit) params.set("limit", String(limit))
@@ -150,13 +124,13 @@ export async function getAdminProducts(): Promise<Product[]> {
 export async function createProduct(values: ProductFormValues): Promise<Product> {
   const response = await apiRequest<ApiResponse<Product>>("/admin/products", {
     method: "POST",
-    body: toFormData(values),
+    body: toProductFormData(values),
   })
   return response.data
 }
 
 export async function updateProduct(id: number, values: ProductFormValues): Promise<Product> {
-  const formData = toFormData(values)
+  const formData = toProductFormData(values)
   formData.append("_method", "PUT")
   const response = await apiRequest<ApiResponse<Product>>(`/admin/products/${id}`, {
     method: "POST",
