@@ -1,3 +1,4 @@
+import { productPriceRange } from "./product-pricing.ts"
 import type { Product } from "./product-api"
 
 export type CatalogFilterKey = "category" | "brand"
@@ -42,7 +43,7 @@ export function filterCatalogProducts(products: Product[], filters: CatalogFilte
     (Object.keys(filters) as CatalogFilterKey[]).every((key) => (
       filters[key].length === 0 || filters[key].includes(filterValue(product, key))
     ))
-    && (minimumPrice === "" || product.price >= Number(minimumPrice))
-    && (maximumPrice === "" || product.price <= Number(maximumPrice))
+    && (minimumPrice === "" || productPriceRange(product).min >= Number(minimumPrice))
+    && (maximumPrice === "" || productPriceRange(product).min <= Number(maximumPrice))
   ))
 }

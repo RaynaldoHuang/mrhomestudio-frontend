@@ -4,16 +4,13 @@ import { Loader2, PackageOpen, Search, X } from "lucide-react"
 import { Link } from "react-router-dom"
 import { AnimatePresence, motion, useIsPresent, useReducedMotion } from "motion/react"
 
+import { formatProductPrice } from "@/lib/product-pricing"
 import { getProducts, type Product } from "@/lib/product-api"
 
 type SearchOverlayProps = {
   open: boolean
   onClose: () => void
   animateExit?: boolean
-}
-
-function formatPrice(value: number) {
-  return `Rp${value.toLocaleString("id-ID")}`
 }
 
 export function SearchOverlay({ open, onClose, animateExit = true }: SearchOverlayProps) {
@@ -190,7 +187,7 @@ function SearchContent({ onClose }: Pick<SearchOverlayProps, "onClose">) {
                       <div className="pt-3">
                         <h2 className="truncate text-sm font-medium transition-colors group-hover:text-yellow-400 sm:text-base">{product.name}</h2>
                         <p className="mt-1 truncate text-xs text-white/45">{product.category}</p>
-                        <p className="mt-3 text-sm">{formatPrice(product.price)}</p>
+                        <p className="mt-3 text-sm">{formatProductPrice(product)}</p>
                       </div>
                     </Link>
                   ))}

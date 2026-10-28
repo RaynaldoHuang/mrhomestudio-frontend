@@ -16,6 +16,11 @@ export type ProductVariant = {
   values: string[]
 }
 
+export type ProductVariantPrice = {
+  options: string[]
+  price: number
+}
+
 export type Product = {
   id: number
   name: string
@@ -29,6 +34,7 @@ export type Product = {
   description: string
   specifications: ProductSpecification[]
   variants: ProductVariant[]
+  variant_prices?: ProductVariantPrice[]
   is_active: boolean
   show_on_home: boolean
   images: ProductImage[]
@@ -46,6 +52,7 @@ export type ProductFormValues = {
   description: string
   specifications: ProductSpecification[]
   variants: ProductVariant[]
+  variant_prices?: ProductVariantPrice[]
   is_active: boolean
   show_on_home: boolean
   images: File[]

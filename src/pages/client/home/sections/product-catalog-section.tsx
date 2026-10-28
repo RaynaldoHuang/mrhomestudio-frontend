@@ -1,3 +1,4 @@
+import { formatProductPrice } from "@/lib/product-pricing"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { ArrowUpRight, PackageOpen } from "lucide-react"
@@ -96,7 +97,7 @@ export function ProductCatalogSection() {
                         {product.name}
                       </p>
                       <p className="font-neue-haas shrink-0 text-sm font-normal text-white sm:text-sm">
-                        Rp{product.price.toLocaleString("id-ID")}
+                        {formatProductPrice(product)}
                       </p>
                     </div>
                   </div>

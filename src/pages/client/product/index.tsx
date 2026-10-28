@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Container } from "@/components/client/container"
 import { Reveal } from "@/components/client/reveal"
 import { useCart } from "@/contexts/cart-context"
+import { formatProductPrice, selectedProductPrice } from "@/lib/product-pricing"
 import { specificationLabel } from "@/lib/specification-label"
 import { getProduct, type Product } from "@/lib/product-api"
 
@@ -28,7 +29,8 @@ export function ProductDetailPage() {
         setProduct(item)
         setLoadError(false)
         setActiveImage(0)
-        setSelectedVariants(Object.fromEntries(item.variants.map((variant) => [variant.name, variant.values[0] ?? ""])))
+        setSelectedVariants({})
+        setQuantity(1)
       })
       .catch(() => active && setLoadError(true))
 
@@ -43,11 +45,17 @@ export function ProductDetailPage() {
   if (loadError) return <div className="min-h-screen bg-black py-32 text-center text-white"><h1 className="text-2xl">Product not found</h1><Link to="/collection/all-products" className="mt-6 inline-block text-yellow-400">Back to collection</Link></div>
   if (!product || String(product.id) !== id) return <div className="min-h-screen bg-black py-32 text-center text-white/60">Loading product…</div>
 
+  const selectedPrice = selectedProductPrice(product, selectedVariants)
+
   const addToCart = () => {
+    if (selectedPrice === undefined) {
+      toast.error("Pilih semua varian terlebih dahulu.")
+      return
+    }
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
+      price: selectedPrice,
       colour: selectedVariantLabel || "Standard",
       image: product.thumbnail_url,
       quantity,
@@ -94,12 +102,12 @@ export function ProductDetailPage() {
           <Reveal onLoad delay={0.12} className="lg:sticky lg:top-28">
             <p className="mb-3 text-xs uppercase tracking-[0.18em] text-yellow-400">{product.category || "Premium audio"}</p>
             <h1 className="font-degular text-3xl font-normal leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
-            <p className="mt-3 text-2xl tracking-tight">Rp{product.price.toLocaleString("id-ID")}</p>
+            <p aria-live="polite" className="mt-3 text-2xl tracking-tight">{selectedPrice === undefined ? formatProductPrice(product) : `Rp${selectedPrice.toLocaleString("id-ID")}`}</p>
             <p className="mt-5 max-w-xl whitespace-pre-line text-base leading-7 text-white/60">{product.description}</p>
 
             {product.variants.map((variant) => (
               <fieldset key={variant.name} className="mt-8">
-                <legend className="mb-3 text-sm">{variant.name}: <span className="text-white/55">{selectedVariants[variant.name]}</span></legend>
+                <legend className="mb-3 text-sm">{variant.name}: <span className="text-white/55">{selectedVariants[variant.name] || "Pilih varian"}</span></legend>
                 <div className="flex flex-wrap gap-2">
                   {variant.values.map((value) => <button key={value} type="button" onClick={() => setSelectedVariants((current) => ({ ...current, [variant.name]: value }))} className={`min-h-10 cursor-pointer border px-4 text-sm transition-colors ${selectedVariants[variant.name] === value ? "border-yellow-500 bg-yellow-500 text-black" : "border-white/30 hover:border-white"}`}>{value}</button>)}
                 </div>
@@ -112,7 +120,7 @@ export function ProductDetailPage() {
                 <span className="text-sm font-medium">{quantity}</span>
                 <button type="button" aria-label="Increase quantity" onClick={() => setQuantity((value) => Math.min(Number.MAX_SAFE_INTEGER, value + 1))} className="flex h-full w-12 cursor-pointer items-center justify-center text-white/70 hover:text-yellow-400"><Plus className="size-4" /></button>
               </div>
-              <button type="button" onClick={addToCart} className="flex h-16 min-w-0 cursor-pointer items-center justify-center gap-2 bg-yellow-500 px-6 text-sm font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40 sm:h-14"><ShoppingBag className="size-4" />Add to cart</button>
+              <button type="button" disabled={selectedPrice === undefined} onClick={addToCart} className="flex h-16 min-w-0 cursor-pointer items-center justify-center gap-2 bg-yellow-500 px-6 text-sm font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40 sm:h-14"><ShoppingBag className="size-4" />{selectedPrice === undefined ? "Pilih varian dahulu" : "Add to cart"}</button>
               <button type="button" onClick={shareProduct} aria-label="Share product" className="flex size-16 cursor-pointer items-center justify-center border border-white/25 hover:border-yellow-500 hover:text-yellow-400 sm:size-14"><Share2 className="size-5" /></button>
             </div>
 

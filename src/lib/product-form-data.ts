@@ -26,6 +26,13 @@ export function toProductFormData(values: ProductFormValues): FormData {
       formData.append(`variants[${variantIndex}][values][${valueIndex}]`, value)
     })
   })
+  if (!values.variant_prices?.length) formData.append("variant_prices", "")
+  values.variant_prices?.forEach((row, index) => {
+    formData.append(`variant_prices[${index}][price]`, String(row.price))
+    row.options.forEach((option, optionIndex) => {
+      formData.append(`variant_prices[${index}][options][${optionIndex}]`, option)
+    })
+  })
   values.images.forEach((image) => formData.append("images[]", image))
   values.remove_image_ids.forEach((id) => formData.append("remove_image_ids[]", String(id)))
 

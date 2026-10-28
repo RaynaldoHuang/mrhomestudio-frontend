@@ -1,3 +1,4 @@
+import { selectedProductPrice } from "./product-pricing.ts"
 import type { Product } from "./product-api"
 
 export type CartItem = {
@@ -64,7 +65,7 @@ export function synchronizeCart(items: CartItem[], products: Map<number, Product
     return {
       ...item,
       name: product.name,
-      price: product.price,
+      price: selectedVariants ? selectedProductPrice(product, selectedVariants) ?? product.price : item.price,
       image: product.thumbnail_url ?? product.images[0]?.url ?? null,
       colour: selectedVariants
         ? product.variants.map((variant) => `${variant.name}: ${selectedVariants[variant.name]}`).join(", ") || "Standard"

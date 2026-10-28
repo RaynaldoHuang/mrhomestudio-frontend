@@ -1,3 +1,4 @@
+import { formatProductPrice, productPriceRange } from "@/lib/product-pricing"
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react"
 import { Check, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react"
 import { Link, useParams, useSearchParams } from "react-router-dom"
@@ -128,8 +129,8 @@ function CollectionContent({ id }: { id: string }) {
     const result = filterCatalogProducts(products, selectedFilters, minimumPrice, maximumPrice)
 
     return [...result].sort((a, b) => {
-      if (sortBy === "price-low") return a.price - b.price
-      if (sortBy === "price-high") return b.price - a.price
+      if (sortBy === "price-low") return productPriceRange(a).min - productPriceRange(b).min
+      if (sortBy === "price-high") return productPriceRange(b).min - productPriceRange(a).min
       if (sortBy === "name") return a.name.localeCompare(b.name)
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
@@ -344,7 +345,7 @@ function CollectionContent({ id }: { id: string }) {
                 <div className="relative aspect-square overflow-hidden bg-neutral-100">
                   {product.thumbnail_url ? <img src={product.thumbnail_url} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" /> : <div className="h-full w-full bg-neutral-200" />}
                 </div>
-                <div className="pt-2"><div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3"><div className="min-w-0"><p title={product.name} className="text-sm leading-snug transition-colors group-hover:text-yellow-400 max-sm:truncate">{product.name}</p>{product.brand && <p className="mb-1 text-xs text-white/50">{product.brand}</p>}{product.category && <p className="mt-1 text-xs text-white/40">{product.category}</p>}</div><p className="shrink-0 text-sm">Rp{product.price.toLocaleString("id-ID")}</p></div></div>
+                <div className="pt-2"><div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3"><div className="min-w-0"><p title={product.name} className="text-sm leading-snug transition-colors group-hover:text-yellow-400 max-sm:truncate">{product.name}</p>{product.brand && <p className="mb-1 text-xs text-white/50">{product.brand}</p>}{product.category && <p className="mt-1 text-xs text-white/40">{product.category}</p>}</div><p className="shrink-0 text-sm">{formatProductPrice(product)}</p></div></div>
               </Link>
             </Reveal>
           ))}

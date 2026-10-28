@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { specificationLabel } from "@/lib/specification-label"
+import { findVariantPrice, formatProductPrice, variantCombinationCount, variantCombinations } from "@/lib/product-pricing"
 import { parseVariantValues } from "@/lib/variant-values"
 import { formatRupiahInput } from "@/lib/rupiah-input"
 import { getAdminCategories, type Category } from "@/lib/category-api"
@@ -48,13 +49,12 @@ const emptyForm: ProductFormDraft = {
   description: "",
   specifications: [],
   variants: [],
+  variant_prices: [],
   is_active: true,
   show_on_home: false,
   images: [],
   remove_image_ids: [],
 }
-
-const formatPrice = (price: number) => `Rp${price.toLocaleString("id-ID")}`
 
 function valuesFromProduct(product: Product): ProductFormDraft {
   return {
@@ -63,6 +63,7 @@ function valuesFromProduct(product: Product): ProductFormDraft {
     category_id: product.category_id,
     brand_id: product.brand_id ?? null,
     price: product.price,
+    variant_prices: product.variant_prices ?? [],
     description: product.description,
     specifications: product.specifications.map((specification) => ({ ...specification, name: specificationLabel(specification.name) })),
     variants: product.variants.map((variant) => ({ name: variant.name, valuesText: variant.values.join(", ") })),
@@ -139,6 +140,14 @@ export function ProductsPage() {
     () => editingProduct?.images.filter((image) => !form.remove_image_ids.includes(image.id)) ?? [],
     [editingProduct, form.remove_image_ids],
   )
+  const parsedVariants = form.variants.map((variant) => ({ name: variant.name.trim(), values: parseVariantValues(variant.valuesText) }))
+  const combinations = variantCombinations(parsedVariants)
+  const tooManyCombinations = variantCombinationCount(parsedVariants) > 500
+  const variantPrices = combinations.flatMap((options) => {
+    const row = findVariantPrice(form.variant_prices ?? [], options)
+    return row ? [row] : []
+  })
+
   const totalImages = existingImages.length + form.images.length
 
   const openCreateDialog = () => {
@@ -184,10 +193,20 @@ export function ProductsPage() {
     const values: ProductFormValues = {
       ...form,
       specifications: form.specifications.map((specification) => ({ ...specification, name: specificationLabel(specification.name) })),
-      variants: form.variants.map((variant) => ({ name: variant.name, values: parseVariantValues(variant.valuesText) })),
+      variants: parsedVariants,
+      variant_prices: variantPrices,
     }
     if (values.variants.some((variant) => variant.values.length === 0)) {
       toast.error("Enter at least one value for each variant, separated by commas.")
+      return
+    }
+
+    if (tooManyCombinations) {
+      toast.error("Maksimal 500 kombinasi varian per produk.")
+      return
+    }
+    if (new Set(parsedVariants.map((variant) => variant.name)).size !== parsedVariants.length) {
+      toast.error("Nama setiap varian harus berbeda.")
       return
     }
 
@@ -280,7 +299,7 @@ export function ProductsPage() {
                   <TableCell><div className="flex min-w-56 items-center gap-3">{product.thumbnail_url ? <img src={product.thumbnail_url} alt="" className="size-14 rounded-lg object-cover" /> : <div className="flex size-14 items-center justify-center rounded-lg bg-muted"><Image className="size-5 text-muted-foreground" /></div>}<div><p className="font-medium">{product.name}</p><p className="text-xs text-muted-foreground">{product.images.length} image(s)</p></div></div></TableCell>
                   <TableCell>{product.category || "—"}</TableCell>
                   <TableCell>{product.brand || "—"}</TableCell>
-                  <TableCell>{formatPrice(product.price)}</TableCell>
+                  <TableCell>{formatProductPrice(product)}</TableCell>
                   <TableCell><div className="flex flex-wrap gap-1"><Badge variant={product.is_active ? "default" : "secondary"}>{product.is_active ? "Active" : "Inactive"}</Badge>{product.show_on_home && <Badge variant="outline">Homepage</Badge>}</div></TableCell>
                   <TableCell><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" aria-label={`Edit ${product.name}`} onClick={() => openEditDialog(product)}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" title="Duplikat produk" aria-label={`Duplikat ${product.name}`} disabled={duplicatingId !== null} onClick={() => void handleDuplicate(product)}>{duplicatingId === product.id ? <Loader2 className="size-4 animate-spin" /> : <Copy className="size-4" />}</Button><Button variant="ghost" size="icon" aria-label={`Delete ${product.name}`} disabled={duplicatingId === product.id} onClick={() => setDeleteTarget(product)}><Trash2 className="size-4 text-destructive" /></Button></div></TableCell>
                 </TableRow>
@@ -300,7 +319,7 @@ export function ProductsPage() {
             <div className="grid gap-5 py-2 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2"><Label htmlFor="product-name">Product name</Label><Input id="product-name" required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
               <div className="space-y-2"><Label htmlFor="product-category">Category</Label><Select value={form.category_id === null ? "none" : String(form.category_id)} onValueChange={(value) => setForm({ ...form, category_id: value === "none" || value === null ? null : Number(value), category: categories.find((category) => String(category.id) === value)?.name ?? "" })}><SelectTrigger id="product-category"><SelectValue>{categories.find((category) => category.id === form.category_id)?.name ?? (form.category_id === null ? "No category" : "Category removed from Mega Menu")}</SelectValue></SelectTrigger><SelectContent><SelectItem value="none">No category</SelectItem>{categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.menu_groups.length > 0 ? `${category.menu_groups.join(", ")} → ${category.name}` : category.name}{!category.is_active && " (Inactive)"}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground">Categories follow Mega Menu collection links. Manage covers and visibility in Admin → Categories.</p></div>
-              <div className="space-y-2"><Label htmlFor="product-price">Price (Rp)</Label><Input id="product-price" type="text" inputMode="numeric" pattern="[0-9.]*" required value={priceInput} onChange={handlePriceChange} /></div>
+              <div className="space-y-2"><Label htmlFor="product-price">Harga dasar (Rp)</Label><Input id="product-price" type="text" inputMode="numeric" pattern="[0-9.]*" required value={priceInput} onChange={handlePriceChange} /><p className="text-xs text-muted-foreground">Dipakai untuk kombinasi varian yang belum diberi harga khusus.</p></div>
               <div className="space-y-2"><Label htmlFor="product-brand">Merek produk</Label><Select value={form.brand_id === null ? "none" : String(form.brand_id)} onValueChange={(value) => setForm({ ...form, brand_id: value === null || value === "none" ? null : Number(value) })}><SelectTrigger id="product-brand"><SelectValue>{brands.find((brand) => brand.id === form.brand_id)?.name ?? "Tanpa merek"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="none">Tanpa merek</SelectItem>{brands.map((brand) => <SelectItem key={brand.id} value={String(brand.id)}>{brand.name}</SelectItem>)}</SelectContent></Select><p className="text-xs text-muted-foreground">Kelola pilihan di <Link to="/admin/brands" className="underline">Master Data → Merek</Link>.</p></div>
               <div className="flex items-center justify-between rounded-lg border p-3"><div className="space-y-2"><Label htmlFor="product-active">Active product</Label><p className="text-xs text-muted-foreground">Visible on the website.</p></div><Switch id="product-active" checked={form.is_active} onCheckedChange={(checked) => setForm({ ...form, is_active: checked })} /></div>
               <div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2"><div><Label htmlFor="product-home">Tampilkan di homepage (Best Sellers)</Label><p className="mt-1 text-xs text-muted-foreground">Produk aktif yang dipilih akan tampil di section Best Sellers menggunakan gambar pertama produk.</p></div><Switch id="product-home" checked={form.show_on_home} onCheckedChange={(checked) => setForm({ ...form, show_on_home: checked })} /></div>
@@ -317,6 +336,33 @@ export function ProductsPage() {
                 <div className="flex items-center justify-between"><div className="space-y-2"><Label>Variants</Label><p className="text-xs text-muted-foreground">Examples: Color, Size, Finish, or Package. Separate values with commas, e.g. Black, White, Walnut.</p></div><Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, variants: [...form.variants, { name: "", valuesText: "" }] })}><Plus className="size-4" /> Add Variant</Button></div>
                 {form.variants.map((variant, index) => <div key={index} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_2fr_auto]"><Input required placeholder="Variant name" value={variant.name} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} /><Input required placeholder="Black, White, Walnut" value={variant.valuesText} onChange={(event) => setForm({ ...form, variants: form.variants.map((item, itemIndex) => itemIndex === index ? { ...item, valuesText: event.target.value } : item) })} /><Button type="button" variant="ghost" size="icon" onClick={() => setForm({ ...form, variants: form.variants.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="size-4" /></Button></div>)}
               </div>
+
+              {form.variants.length > 0 && <div className="space-y-3 sm:col-span-2">
+                <Label>Harga per kombinasi varian (Rp)</Label>
+                <p className="text-xs text-muted-foreground">Kosongkan untuk memakai harga dasar. Harga depan menampilkan harga termurah dengan “Mulai dari” bila harganya berbeda.</p>
+                {tooManyCombinations && <p role="alert" className="text-sm text-destructive">Maksimal 500 kombinasi. Kurangi pilihan varian sebelum menyimpan.</p>}
+                {combinations.map((options, index) => {
+                  const row = findVariantPrice(form.variant_prices ?? [], options)
+                  const label = parsedVariants.map((variant, index) => `${variant.name}: ${options[index]}`).join(" / ")
+                  const key = JSON.stringify(options)
+                  return <div key={key} className="grid items-center gap-2 rounded-lg border p-3 sm:grid-cols-2">
+                    <Label htmlFor={`variant-price-${index}`}>{label}</Label>
+                    <Input id={`variant-price-${index}`} aria-label={`Harga ${label}`} type="text" inputMode="numeric" pattern="[0-9.]*" placeholder={form.price.toLocaleString("id-ID")} value={row ? row.price.toLocaleString("id-ID") : ""} onChange={(event) => {
+                      const input = event.currentTarget
+                      const digits = input.value.replace(/[^0-9]/g, "")
+                      const { amount: price, caret } = formatRupiahInput(input.value, input.selectionStart ?? input.value.length)
+                      if (!Number.isSafeInteger(price)) return
+                      setForm((current) => ({ ...current, variant_prices: [
+                        ...(current.variant_prices ?? []).filter((item) => JSON.stringify(item.options) !== key),
+                        ...(digits ? [{ options, price }] : []),
+                      ] }))
+                      requestAnimationFrame(() => {
+                        if (document.activeElement === input) input.setSelectionRange(caret, caret)
+                      })
+                    }} />
+                  </div>
+                })}
+              </div>}
 
               <div className="space-y-3 sm:col-span-2">
                 <div className="flex items-center justify-between"><Label>Specifications</Label><Button type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, specifications: [...form.specifications, { name: "", value: "" }] })}><Plus className="size-4" /> Add Specification</Button></div>
