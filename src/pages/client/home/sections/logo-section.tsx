@@ -27,7 +27,7 @@ export function LogoSection() {
                 alt={logo.name}
                 loading="lazy"
                 decoding="async"
-                className="max-h-10 max-w-full object-contain opacity-75 grayscale-100 sm:max-h-12"
+                className="max-h-10 max-w-full object-contain [filter:brightness(0)_invert(0.65)] sm:max-h-12"
               />
             </li>
           ))}
