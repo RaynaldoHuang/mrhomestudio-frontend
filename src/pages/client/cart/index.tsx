@@ -50,7 +50,7 @@ export function CartPage() {
     ].join("\n")
 
     window.open(
-      `https://wa.me/6285928953264?text=${encodeURIComponent(message)}`,
+      `https://wa.me/6281273516346?text=${encodeURIComponent(message)}`,
       "_blank",
       "noopener,noreferrer",
     )
