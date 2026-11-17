@@ -5,7 +5,7 @@ import featureImage from "@/assets/img/img4.png"
 
 export function ProductFeatureSection() {
   return (
-    <section className="bg-black pt-20 text-white sm:pt-24 lg:pt-28">
+    <section className="bg-black text-white">
       <div className="relative w-full overflow-hidden sm:min-h-136 lg:min-h-152">
         <img
           src={featureImage}
