@@ -93,6 +93,15 @@ export function Navbar() {
       <Container className="max-w-none px-5 sm:px-8 lg:px-16">
         <div className="hidden h-18 grid-cols-[1fr_auto_1fr] items-center lg:grid">
           <nav aria-label="Main navigation" className="flex h-full items-center gap-5 xl:gap-8">
+            <Link
+              to="/"
+              onMouseEnter={() => setActiveMenu(null)}
+              onFocus={() => setActiveMenu(null)}
+              onClick={() => setActiveMenu(null)}
+              className="relative flex h-full items-center text-sm font-light transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-yellow-500 after:transition-transform hover:text-yellow-400 hover:after:scale-x-100"
+            >
+              Home
+            </Link>
             {navigation.map((item) => (
               <button
                 key={item.label}
@@ -239,7 +248,7 @@ export function Navbar() {
         </div>
       )}
 
-      <MobileMenu items={[...navigation.map(({ label, href, groups, display_mode }) => ({ label, href, groups, display_mode })), { label: "About Us", href: "/about" }]} isOpen={isMenuOpen} onNavigate={closeMenu} />
+      <MobileMenu items={[{ label: "Home", href: "/" }, ...navigation.map(({ label, href, groups, display_mode }) => ({ label, href, groups, display_mode })), { label: "About Us", href: "/about" }]} isOpen={isMenuOpen} onNavigate={closeMenu} />
       <CartDrawer open={isCartOpen} onOpenChange={handleCartOpenChange} />
       <SearchOverlay open={isSearchOpen} onClose={closeSearch} animateExit={!isCartOpen && !isMenuOpen} />
     </header>

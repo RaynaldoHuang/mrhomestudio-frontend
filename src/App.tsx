@@ -71,6 +71,9 @@ const ProductsPage = lazy(() =>
 const BrandsPage = lazy(() =>
   import("@/pages/brands/brands-page").then(({ BrandsPage }) => ({ default: BrandsPage })),
 )
+const HomeLogosPage = lazy(() =>
+  import("@/pages/home-logos/home-logos-page").then(({ HomeLogosPage }) => ({ default: HomeLogosPage })),
+)
 const CategoriesPage = lazy(() =>
   import("@/pages/categories/categories-page").then(({ CategoriesPage }) => ({ default: CategoriesPage })),
 )
@@ -129,6 +132,7 @@ export default function App() {
               />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="brands" element={<BrandsPage />} />
+              <Route path="home-logos" element={<HomeLogosPage />} />
 
               <Route
                 path="profile"

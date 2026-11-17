@@ -21,6 +21,11 @@ export const navigation = [
     title: "Website Content",
     items: [
       {
+        title: "Logo Homepage",
+        href: "/admin/home-logos",
+        icon: Images,
+      },
+      {
         title: "Carousel",
         href: "/admin/carousels",
         icon: Images,
