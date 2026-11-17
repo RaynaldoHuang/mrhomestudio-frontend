@@ -80,7 +80,7 @@ export function ListeningRoomSection() {
   })
 
   return (
-    <section id="listening-room" aria-labelledby="listening-room-title" className="bg-black py-20 text-white sm:py-24 lg:py-28">
+    <section id="listening-room" aria-labelledby="listening-room-title" className="bg-black pt-20 pb-8 text-white sm:pt-24 sm:pb-10 lg:pt-28 lg:pb-12">
       <Container className="font-neue-haas max-w-none px-5 sm:px-12 lg:px-16">
         <div className="flex flex-col justify-between gap-8 border-b border-white/15 pb-10 lg:flex-row lg:items-end lg:gap-16 lg:pb-12">
           <div>

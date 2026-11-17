@@ -9,7 +9,7 @@ export function AboutSection() {
     <section
       id="our-philosophy"
       aria-labelledby="our-philosophy-title"
-      className="bg-black py-20 text-white sm:py-24 lg:py-28"
+      className="bg-black pt-8 pb-20 text-white sm:pt-10 sm:pb-24 lg:pt-12 lg:pb-28"
     >
       <Container className="font-neue-haas max-w-none px-5 sm:px-12 lg:px-16">
         <div className="grid gap-y-7 lg:grid-cols-[3fr_2fr] lg:gap-x-12 lg:gap-y-6 xl:gap-x-20">
