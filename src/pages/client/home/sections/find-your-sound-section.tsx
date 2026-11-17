@@ -35,7 +35,7 @@ export function FindYourSoundSection() {
   return (
     <section
       aria-labelledby="find-your-sound-title"
-      className="bg-black pt-6 pb-12 text-white sm:pt-8 sm:pb-16 lg:pt-10 lg:pb-20"
+      className="bg-black pt-12 pb-12 text-white sm:pt-16 sm:pb-16 lg:pt-20 lg:pb-20"
     >
       <Container className="font-neue-haas max-w-none px-5 sm:px-12 lg:px-16">
         <div className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-end lg:gap-12 xl:gap-20">

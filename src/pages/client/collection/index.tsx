@@ -123,6 +123,7 @@ function CollectionContent({ id }: { id: string }) {
 
   const activeCategory = categories.find((category) => category.slug === id)
   const dynamicFilterGroups = useMemo(() => catalogFilterGroups(products), [products])
+  const brandOptions = dynamicFilterGroups.find((group) => group.key === "brand")?.options ?? []
   const priceRangeInvalid = minimumPrice !== "" && maximumPrice !== "" && Number(minimumPrice) > Number(maximumPrice)
 
   const filteredProducts = useMemo(() => {
@@ -237,6 +238,40 @@ function CollectionContent({ id }: { id: string }) {
             </button>
           </div>
         </Reveal>
+
+        {!isLoading && !loadError && brandOptions.length > 0 && (
+          <div className="mb-8 sm:mb-10" role="group" aria-label="Filter produk berdasarkan merek">
+            <p className="mb-3 text-xs tracking-[0.16em] text-white/50 uppercase">Brand</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                aria-pressed={selectedFilters.brand.length === 0}
+                onClick={() => {
+                  resetPage()
+                  setSelectedFilters((current) => ({ ...current, brand: [] }))
+                }}
+                className={`inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-yellow-400 ${selectedFilters.brand.length === 0 ? "border-yellow-400 bg-yellow-400 text-black" : "border-white/25 text-white/75 hover:border-yellow-400 hover:text-yellow-400"}`}
+              >
+                Semua merek
+              </button>
+              {brandOptions.map((brand) => {
+                const selected = selectedFilters.brand.includes(brand.value)
+                return (
+                  <button
+                    key={brand.value}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => toggleDynamicFilter("brand", brand.value)}
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-yellow-400 ${selected ? "border-yellow-400 bg-yellow-400 text-black" : "border-white/25 text-white/75 hover:border-yellow-400 hover:text-yellow-400"}`}
+                  >
+                    {brand.label}
+                    <span className={`text-xs tabular-nums ${selected ? "text-black/60" : "text-white/40"}`}>{brand.count}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {activeFilterCount > 0 && <div className="mb-8 flex flex-wrap items-center gap-2" aria-label="Filter aktif">
           {dynamicFilterGroups.flatMap((group) => group.options.filter((option) => selectedFilters[group.key].includes(option.value)).map((option) => <button key={`${group.key}:${option.value}`} type="button" onClick={() => toggleDynamicFilter(group.key, option.value)} aria-label={`Hapus filter ${group.label}: ${option.label}`} className="inline-flex items-center gap-2 border border-white/25 px-3 py-1.5 text-xs text-white/80 hover:border-yellow-400">{group.label}: {option.label}<X className="size-3" /></button>))}
