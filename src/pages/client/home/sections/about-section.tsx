@@ -1,7 +1,7 @@
 import { ArrowUpRight } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import philosophyImage from "@/assets/img/img3.png"
+import philosophyImage from "@/assets/img/studio1.webp"
 import { Container } from "@/components/client/container"
 
 export function AboutSection() {

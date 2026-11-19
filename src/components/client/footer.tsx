@@ -46,14 +46,18 @@ export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-black text-white">
       <Container className="max-w-none px-8 pt-16 pb-8 sm:px-12 sm:pt-20 lg:px-16 lg:pt-24">
-        <div className={`grid grid-cols-2 gap-x-8 gap-y-12 lg:gap-x-16 ${categoryLinks.length > 0 ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
+        <div className={`grid grid-cols-2 gap-x-8 gap-y-12 lg:gap-x-16 ${categoryLinks.length > 0 ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
           {footerGroups.map((group) => (
-            <nav key={group.title} aria-label={`${group.title} footer navigation`}>
+            <nav
+              key={group.title}
+              aria-label={`${group.title} footer navigation`}
+              className={group.title === "Categories" ? "col-span-2 min-w-0" : "min-w-0"}
+            >
               <h2 className="font-neue-haas text-xs font-normal uppercase text-white sm:text-sm">
                 {group.title}
               </h2>
 
-              <ul className="mt-8 space-y-2">
+              <ul className={group.title === "Categories" ? "mt-8 grid grid-cols-2 gap-x-8 gap-y-2 lg:gap-x-16" : "mt-8 space-y-2"}>
                 {group.links.map((link) => (
                   <li key={`${link.href}:${link.label}`}>
                     <Link

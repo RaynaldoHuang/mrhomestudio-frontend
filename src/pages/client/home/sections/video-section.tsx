@@ -57,9 +57,6 @@ export function VideoSection() {
               <span className="relative flex size-16 items-center justify-center rounded-full bg-yellow-400 text-black shadow-lg transition-transform duration-300 motion-safe:group-hover:scale-110 sm:size-20">
                 <Play className="ml-1 size-6 fill-current sm:size-7" aria-hidden="true" />
               </span>
-              <span className="absolute bottom-4 left-4 text-xs tracking-[0.16em] text-white uppercase sm:bottom-6 sm:left-6">
-                Watch the film
-              </span>
             </button>
           )}
         </div>
