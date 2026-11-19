@@ -2,7 +2,8 @@ import { ArrowUpRight } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import { Link } from "react-router-dom"
 
-import philosophyImage from "@/assets/img/studio1.webp"
+import philosophyImage from "@/assets/img/studio1-1600.webp"
+import philosophyImageSmall from "@/assets/img/studio1-800.webp"
 import { Container } from "@/components/client/container"
 
 export function AboutSection() {
@@ -37,28 +38,23 @@ export function AboutSection() {
           </div>
 
           <figure className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={{
-                hidden: { clipPath: reduceMotion ? "inset(0% 0% 0% 0%)" : "inset(0% 0% 100% 0%)" },
-                visible: { clipPath: "inset(0% 0% 0% 0%)" },
-              }}
-              transition={{ duration: reduceMotion ? 0 : 1.15, ease }}
-              className="aspect-video overflow-hidden bg-neutral-900"
-            >
+            <div className="aspect-video overflow-hidden bg-neutral-900">
               <motion.img
-                variants={{ hidden: { scale: reduceMotion ? 1 : 1.08 }, visible: { scale: 1 } }}
-                transition={{ duration: reduceMotion ? 0 : 1.5, ease }}
+                initial={{ scale: reduceMotion ? 1 : 1.035 }}
+                whileInView={{ scale: 1 }}
+                viewport={{ once: true, amount: 0.05 }}
+                transition={{ duration: reduceMotion ? 0 : 0.65, ease }}
                 src={philosophyImage}
+                srcSet={`${philosophyImageSmall} 800w, ${philosophyImage} 1600w`}
+                sizes="(min-width: 1024px) 60vw, 100vw"
                 alt="Audio studio with integrated speakers, warm wood finishes and a comfortable listening area"
-                loading="lazy"
-                width={925}
-                height={521}
+                loading="eager"
+                decoding="async"
+                width={1600}
+                height={1067}
                 className="h-full w-full object-cover object-center"
               />
-            </motion.div>
+            </div>
             <motion.figcaption {...reveal(0.25)} className="mt-4 flex items-center gap-3 text-xs tracking-wide text-white/55">
               <span className="h-px w-7 bg-yellow-400/70" aria-hidden="true" />
               Sound. Space. In harmony.
