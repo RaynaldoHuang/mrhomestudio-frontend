@@ -20,7 +20,7 @@ export function HomePage() {
       </div>
       <Reveal><VideoSection /></Reveal>
       <ListeningRoomSection />
-      <Reveal><AboutSection /></Reveal>
+      <AboutSection />
       <Reveal><ServicesSection /></Reveal>
       <Reveal><GallerySection /></Reveal>
       <Reveal><CtaSection /></Reveal>
